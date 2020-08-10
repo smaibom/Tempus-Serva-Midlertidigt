@@ -45,9 +45,10 @@ public class Activities extends CodeunitFormevents{
     private final String activitySelectedDevice = "SELECTEDDEVICE";
     private final String activityDeviceOnStoppoint = "DEVICEONSTOPPOINT";
     private final String activityToInventory = "TOINVENTORY";
+    private final String activityFromInventory = "FROMINVENTORY";
+    private final String activityInventoryComponent = "INVENTORYCOMPONENT";
     
 
-    
     private final String caseEntity = "workorder";
     
     private final String stoppointInvEntity = "stoppointinventory";
@@ -58,6 +59,11 @@ public class Activities extends CodeunitFormevents{
     private final String componentEntity = "components";
     
     
+    private final String componentStorageEntity = "warehouseallocation";
+    private final String componentStorageAmount = "AMOUNT";
+    private final String componentStorageWarehouse = "WAREHOUSE";
+    private final String componentStorageComponent = "COMPONENT";
+    
     
 
     @Override
@@ -67,9 +73,11 @@ public class Activities extends CodeunitFormevents{
         int deviceAtStoppointDataID = Parser.getInteger(c.fields.getElementByFieldName(activityDeviceOnStoppoint).FieldValue);
 
         int stoppointDataID = Parser.getInteger(c.fields.getElementByFieldName(activityStoppoint).FieldValue);
-        int warehouseDataID = Parser.getInteger(c.fields.getElementByFieldName(activityToInventory).FieldValue);
+        int toWarehouseDataID = Parser.getInteger(c.fields.getElementByFieldName(activityToInventory).FieldValue);
+        int fromWarehouseDataID = Parser.getInteger(c.fields.getElementByFieldName(activityFromInventory).FieldValue);
         int caseDataID = Parser.getInteger(c.fields.getElementByFieldName(activityCase).FieldValue);
         int componentDataID = Parser.getInteger(c.fields.getElementByFieldName(activityComponentInstalled).FieldValue);
+        int inventoryComponentRecordDataID = Parser.getInteger(c.fields.getElementByFieldName(activityInventoryComponent).FieldValue);
         int componentAmount = Parser.getInteger(c.fields.getElementByFieldName(activityComponentAmountInstalled).FieldValue);
         
         int spcDataID;
@@ -84,7 +92,7 @@ public class Activities extends CodeunitFormevents{
             case "170":
                 try{
                     SolutionRecord srInstalled = setDeviceStoppoint(SelectedDeviceDataID,stoppointDataID,ses);
-                    SolutionRecord srUninstalled = setDeviceStorage(deviceAtStoppointDataID, warehouseDataID, ses);
+                    SolutionRecord srUninstalled = setDeviceStorage(deviceAtStoppointDataID, toWarehouseDataID, ses);
                     SolutionRecordNew tempName = createSetupActivity(ses, caseDataID, stoppointDataID, SelectedDeviceDataID);
                     c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
                     c.fields.getElementByFieldName(activitySelectedDevice).setFieldValue("");
@@ -127,7 +135,7 @@ public class Activities extends CodeunitFormevents{
             //Remove device from stoppoint
             case "172":
                 try{
-                    SolutionRecord sr = setDeviceStorage(deviceAtStoppointDataID,warehouseDataID,ses);
+                    SolutionRecord sr = setDeviceStorage(deviceAtStoppointDataID,toWarehouseDataID,ses);
                     c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
                     c.fields.getElementByFieldName(activityDeviceOnStoppoint).setFieldValue("");
                     
@@ -234,13 +242,52 @@ public class Activities extends CodeunitFormevents{
                     catch(Exception e){
                     }
                 }
-                
+            
+            //Move component
             case "178":
+                //FromInv, InvComponent, ComponentAmount, ToInv
+                
+                if(toWarehouseDataID == 0 || inventoryComponentRecordDataID == 0 || fromWarehouseDataID == 0 || componentAmount < 1){
+                    
+                    setItemStatus(98);
+                     c.fields.getElementByFieldName("DEBUGFIELD").setFieldValue("hej");
+                    break;
+                }
+                
+                try{
+                    SolutionRecord srFrom = removeWarehouseInvComponent(inventoryComponentRecordDataID, componentAmount, ses);
+                    int inventoryComponentDataID = srFrom.getValueInteger(componentStorageComponent);
+                    int toWarehouseInventoryComponentDataID = findWarehouseComponentDataID(inventoryComponentDataID, toWarehouseDataID, ses);
+                    
+
+                    if(toWarehouseInventoryComponentDataID == 0){
+                        
+                        SolutionRecordNew srnTo = createWarehouseInvComponentRecord(toWarehouseDataID, inventoryComponentDataID, componentAmount, ses);
+
+                        srFrom.persistChanges();
+                        srnTo.persistChanges();
+
+                    }
+                    else{
+                        //Update record
+                        SolutionRecord srTo = addWarehouseComponentInvComponent(toWarehouseInventoryComponentDataID, componentAmount, ses);
+                        srFrom.persistChanges();
+                        srTo.persistChanges();
+                    }    
+                }
+                catch(ValueException e){
+                    //Shouldnt really happen as theres a check before
+                    setItemStatus(98);
+                }
+                    catch(Exception e){
+                }
+                
+                
                 break;
                 
             case "179":
                 try{
-                    SolutionRecord sr = setDeviceStorage(SelectedDeviceDataID,warehouseDataID,ses);
+                    SolutionRecord sr = setDeviceStorage(SelectedDeviceDataID,toWarehouseDataID,ses);
                     sr.persistChanges();
                 }
                 catch(ValueException e){
@@ -290,6 +337,120 @@ public class Activities extends CodeunitFormevents{
         }
         
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**
+     * Finds the DataID to the record of a given component type stored at a specific warehouse
+     * @param componentDataID int value with DataID to the record of the component
+     * @param warehouseDataID int value with DataID to the record of the stoppoint
+     * @param ses Open Session object
+     * @return int value higher than 0 if a record is found, 0 otherwise
+     */
+    private int findWarehouseComponentDataID(int componentDataID,int warehouseDataID, Session ses){
+        SolutionQuery q = ses.getSolutionQuery(componentStorageEntity);
+        q.addWhereCriterion(componentStorageWarehouse, QueryPart.EQUALS, String.valueOf(warehouseDataID));
+        q.addWhereCriterion(componentStorageComponent, QueryPart.EQUALS, String.valueOf(componentDataID));
+        SolutionQueryResultSet rs = q.executeQuery();
+        if(rs.size() == 1){
+            return rs.getRecord(0).getInstanceID();
+        }
+        return 0;
+    }
+    
+        /**
+     * Adds a given amount of components to a specific component storage  record, 
+     * it assumed you use findWarehouseComponentDataID before calling this function.
+     * Does not persist any data
+     * @param warehouseComponentDataID int value with the DataID pointing to the specific record being updated     
+     * @param componentAmount int value with the amount of components being added
+     * @param ses Open Session object
+     * @return A SolutionRecord with the updated amount
+     * @throws ValueException on invalid DataID
+     * @throws Exception on system error
+     */
+    private SolutionRecord addWarehouseComponentInvComponent(int warehouseComponentDataID, int componentAmount, Session ses) throws Exception{
+        
+        int componentStorageSolutionID = ses.getSolutionID(componentStorageEntity);
+        
+        SolutionRecord sr = ses.getSolutionRecord(componentStorageSolutionID, warehouseComponentDataID);
+        if(sr.getInstanceID() == 0){
+            throw new ValueException("Invalid DataIDs");
+        }
+        
+        int newAmount = sr.getValueInteger(componentStorageAmount) + componentAmount;
+        sr.setValueInteger(componentStorageAmount, newAmount);
+        
+        return sr;
+    }
+    
+    
+    /**
+     * Removes a given amount of components to a specific warehouse inventory record, 
+     * Does not persist any data
+     * @param warehouseComponentDataID int value with the DataID pointing to the specific record being updated     
+     * @param componentAmount int value with the amount of components being added
+     * @param ses Open Session object
+     * @return A SolutionRecord with the updated amount
+     * @throws ValueException on invalid DataID
+     * @throws Exception on system error
+     */
+    private SolutionRecord removeWarehouseInvComponent(int warehouseComponentDataID, int componentAmount, Session ses) throws Exception{
+        
+        int componentStorageSolutionID = ses.getSolutionID(componentStorageEntity);
+        
+        SolutionRecord sr = ses.getSolutionRecord(componentStorageSolutionID, warehouseComponentDataID);
+        if(sr.getInstanceID() == 0){
+            throw new ValueException("Invalid DataIDs");
+        }
+        
+        int newAmount = sr.getValueInteger(componentStorageAmount) - componentAmount;
+        if(newAmount >= 0){
+            sr.setValueInteger(componentStorageAmount, newAmount);
+        }
+        return sr;
+
+    }
+    
+        /**
+     * Creates a new record in the stoppoint inventory entity with the given component and amount and a stoppoint.
+     * it assumed you use findStoppointComponentDataID before calling this function to ensure you do not create duplicates
+     * Does not persist data
+     * @param warehouseDataID int value with the stoppoint DataID
+     * @param componentDataIDint int value with the component DataID
+     * @param componentAmount int value with the amount being added
+     * @param ses Open Session Object
+     * @return SolutionRecordNew Object with the fields set
+     * @throws ValueException On invalid dataIDs
+     * @throws Exception on system error
+     */
+    private SolutionRecordNew createWarehouseInvComponentRecord(int warehouseDataID, int componentDataID, int componentAmount, Session ses) throws Exception{
+        
+        int warehouseSolutionID = ses.getSolutionID(warehouseEntity);
+        int componentSolutionID = ses.getSolutionID(componentEntity);
+                              
+        
+        SolutionRecord warehouseSR = ses.getSolutionRecord(warehouseSolutionID, warehouseDataID);
+        SolutionRecord compSR = ses.getSolutionRecord(componentSolutionID, componentDataID);
+        if(warehouseSR.getInstanceID() == 0 || compSR.getInstanceID() == 0){
+            throw new ValueException("Invalid DataIDs");
+        }
+
+        SolutionRecordNew srn = ses.getSolutionRecordNew(componentStorageEntity);
+        srn.setReference(componentStorageWarehouse, warehouseSR);
+        srn.setReference(componentStorageComponent, compSR);
+        srn.setValueInteger(componentStorageAmount, componentAmount);
+        return srn;
+    }
+  
+    
+    
     
     
     
