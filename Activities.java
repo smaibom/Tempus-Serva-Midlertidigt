@@ -42,6 +42,10 @@ public class Activities extends CodeunitFormevents{
     private final String activityActivity = "ACTIVITY";
     private final String activityComponentInstalled = "COMPONETTYPEINSTALLED";
     private final String activityComponentAmountInstalled = "COMPONETTYPEINSTALLEDAMOUNT";
+    private final String activitySelectedDevice = "SELECTEDDEVICE";
+    private final String activityDeviceOnStoppoint = "DEVICEONSTOPPOINT";
+    private final String activityToInventory = "TOINVENTORY";
+    
 
     
     private final String caseEntity = "workorder";
@@ -59,30 +63,32 @@ public class Activities extends CodeunitFormevents{
     @Override
     public void beforeUpdateItem() throws Exception{
         String typeField = c.fields.getElementByFieldName(activityActivity).FieldValue;
-        int deviceInstalledDataID = Parser.getInteger(c.fields.getElementByFieldName("DEVICEINSTALLED").FieldValue);
-        int deviceUninstalledDataID = Parser.getInteger(c.fields.getElementByFieldName("DEVICEUNINSTALLED").FieldValue);
+        int SelectedDeviceDataID =  Parser.getInteger(c.fields.getElementByFieldName(activitySelectedDevice).FieldValue);
+        int deviceAtStoppointDataID = Parser.getInteger(c.fields.getElementByFieldName(activityDeviceOnStoppoint).FieldValue);
 
         int stoppointDataID = Parser.getInteger(c.fields.getElementByFieldName(activityStoppoint).FieldValue);
-        int warehouseDataID = Parser.getInteger(c.fields.getElementByFieldName("TOINVENTORY").FieldValue);
+        int warehouseDataID = Parser.getInteger(c.fields.getElementByFieldName(activityToInventory).FieldValue);
         int caseDataID = Parser.getInteger(c.fields.getElementByFieldName(activityCase).FieldValue);
         int componentDataID = Parser.getInteger(c.fields.getElementByFieldName(activityComponentInstalled).FieldValue);
         int componentAmount = Parser.getInteger(c.fields.getElementByFieldName(activityComponentAmountInstalled).FieldValue);
         
         int spcDataID;
+        
+        
 
         Session ses = SessionFactory.getSession(this);
 
         
         switch(typeField){
-            //Change device with new one
+            //Change device
             case "170":
                 try{
-                    SolutionRecord srInstalled = setDeviceStoppoint(deviceInstalledDataID,stoppointDataID,ses);
-                    SolutionRecord srUninstalled = setDeviceStorage(deviceUninstalledDataID, warehouseDataID, ses);
-                    SolutionRecordNew tempName = createSetupActivity(ses, caseDataID, stoppointDataID, deviceInstalledDataID);
-                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceUninstalledDataID);
-                    c.fields.getElementByFieldName("DEVICEINSTALLED").setFieldValue("");
-                    c.fields.getElementByFieldName("DEVICEUNINSTALLED").setFieldValue("");
+                    SolutionRecord srInstalled = setDeviceStoppoint(SelectedDeviceDataID,stoppointDataID,ses);
+                    SolutionRecord srUninstalled = setDeviceStorage(deviceAtStoppointDataID, warehouseDataID, ses);
+                    SolutionRecordNew tempName = createSetupActivity(ses, caseDataID, stoppointDataID, SelectedDeviceDataID);
+                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
+                    c.fields.getElementByFieldName(activitySelectedDevice).setFieldValue("");
+                    c.fields.getElementByFieldName(activityDeviceOnStoppoint).setFieldValue("");
                     c.fields.getElementByFieldName(activityActivity).setFieldValue(172);
                     srInstalled.persistChanges();
                     srUninstalled.persistChanges();
@@ -99,12 +105,12 @@ public class Activities extends CodeunitFormevents{
                 break;
                 
                 
-            //Setup device
+            //Setup device at stoppoint
             case "171":
                 try{
-                    SolutionRecord sr = setDeviceStoppoint(deviceInstalledDataID,stoppointDataID,ses);
-                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceInstalledDataID);
-                    c.fields.getElementByFieldName("DEVICEINSTALLED").setFieldValue("");
+                    SolutionRecord sr = setDeviceStoppoint(SelectedDeviceDataID,stoppointDataID,ses);
+                    c.fields.getElementByFieldName(activityDevice).setFieldValue(SelectedDeviceDataID);
+                    c.fields.getElementByFieldName(activitySelectedDevice).setFieldValue("");
                     sr.persistChanges();
                 }
                 catch(ValueException e){
@@ -121,9 +127,9 @@ public class Activities extends CodeunitFormevents{
             //Remove device from stoppoint
             case "172":
                 try{
-                    SolutionRecord sr = setDeviceStorage(deviceUninstalledDataID,warehouseDataID,ses);
-                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceUninstalledDataID);
-                    c.fields.getElementByFieldName("DEVICEUNINSTALLED").setFieldValue("");
+                    SolutionRecord sr = setDeviceStorage(deviceAtStoppointDataID,warehouseDataID,ses);
+                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
+                    c.fields.getElementByFieldName(activityDeviceOnStoppoint).setFieldValue("");
                     
                     sr.persistChanges();
                 }
@@ -138,15 +144,15 @@ public class Activities extends CodeunitFormevents{
                 break;
                 
                 
-            //Restart device, do nothing
+            //Restart device
             case "174":
                 try{
-                    if(caseDataID == 0 || stoppointDataID == 0 || deviceUninstalledDataID == 0){
+                    if(caseDataID == 0 || stoppointDataID == 0 || deviceAtStoppointDataID == 0){
                         setItemStatus(98);
                         break;
                     }
-                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceUninstalledDataID);
-                    c.fields.getElementByFieldName("DEVICEUNINSTALLED").setFieldValue("");
+                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
+                    c.fields.getElementByFieldName(activityDeviceOnStoppoint).setFieldValue("");
         
                 }
                 catch(Exception e){
@@ -155,15 +161,15 @@ public class Activities extends CodeunitFormevents{
                 break;
                 
                 
-            //Cablecheck, do nothing
+            //Cablecheck
             case "175":
                 try{
-                    if(caseDataID == 0 || stoppointDataID == 0 || deviceUninstalledDataID == 0){
+                    if(caseDataID == 0 || stoppointDataID == 0 || deviceAtStoppointDataID == 0){
                         setItemStatus(98);
                         break;
                     }
-                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceUninstalledDataID);
-                    c.fields.getElementByFieldName("DEVICEUNINSTALLED").setFieldValue("");
+                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
+                    c.fields.getElementByFieldName(activityDeviceOnStoppoint).setFieldValue("");
         
                 }
                 catch(Exception e){
@@ -172,7 +178,7 @@ public class Activities extends CodeunitFormevents{
                 break;
                 
                 
-                //Component setup
+            //Component setup
             case "176":
                 if(componentDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
                     setItemStatus(98);
@@ -185,7 +191,7 @@ public class Activities extends CodeunitFormevents{
                         srn.persistChanges();
                    }
                    catch(ValueException e){
-                                               setItemStatus(98);
+                        setItemStatus(98);
 
                    }
                    catch(Exception e){
@@ -206,7 +212,7 @@ public class Activities extends CodeunitFormevents{
                 break;
                 
                 
-                //Component takedown
+            //Component takedown
             case "177":
                 if(componentDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
                     setItemStatus(98);
@@ -222,18 +228,29 @@ public class Activities extends CodeunitFormevents{
                         sr.persistChanges();
                     }
                     catch(ValueException e){
-                        //Shouldnt realyl happen as theres a check before
+                        //Shouldnt really happen as theres a check before
                         setItemStatus(98);
                     }
                     catch(Exception e){
                     }
                 }
                 
+            case "178":
+                break;
                 
-                
-                
-                
-                
+            case "179":
+                try{
+                    SolutionRecord sr = setDeviceStorage(SelectedDeviceDataID,warehouseDataID,ses);
+                    sr.persistChanges();
+                }
+                catch(ValueException e){
+                    setItemStatus(98);
+
+                    //Invalid fields
+                }
+                catch(Exception e){
+                    //Figure out a better exception
+                }
                 
                 break;
             default:
