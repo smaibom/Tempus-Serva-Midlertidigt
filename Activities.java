@@ -95,14 +95,13 @@ public class Activities extends CodeunitFormevents{
                     SolutionRecord srUninstalled = setDeviceStorage(deviceAtStoppointDataID, toWarehouseDataID, ses);
                     SolutionRecordNew tempName = createSetupActivity(ses, caseDataID, stoppointDataID, SelectedDeviceDataID);
                     c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
-                    c.fields.getElementByFieldName(activitySelectedDevice).setFieldValue("");
                     c.fields.getElementByFieldName(activityDeviceOnStoppoint).setFieldValue("");
                     c.fields.getElementByFieldName(activityActivity).setFieldValue(172);
                     srInstalled.persistChanges();
                     srUninstalled.persistChanges();
                     tempName.persistChanges(false);
                 }
-                catch(ValueException e){
+                catch(IllegalArgumentException e){
                     c.fields.getElementByFieldName("DEFEKTOKSKALKONTROLLERES").setFieldValue("Dette");
                     setItemStatus(98);
                     //Invalid fields
@@ -118,10 +117,9 @@ public class Activities extends CodeunitFormevents{
                 try{
                     SolutionRecord sr = setDeviceStoppoint(SelectedDeviceDataID,stoppointDataID,ses);
                     c.fields.getElementByFieldName(activityDevice).setFieldValue(SelectedDeviceDataID);
-                    c.fields.getElementByFieldName(activitySelectedDevice).setFieldValue("");
                     sr.persistChanges();
                 }
-                catch(ValueException e){
+                catch(IllegalArgumentException e){
                     setItemStatus(98);
 
                     //Invalid fields
@@ -137,11 +135,10 @@ public class Activities extends CodeunitFormevents{
                 try{
                     SolutionRecord sr = setDeviceStorage(deviceAtStoppointDataID,toWarehouseDataID,ses);
                     c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
-                    c.fields.getElementByFieldName(activityDeviceOnStoppoint).setFieldValue("");
                     
                     sr.persistChanges();
                 }
-                catch(ValueException e){
+                catch(IllegalArgumentException e){
                     setItemStatus(98);
 
                     //Invalid fields
@@ -160,7 +157,6 @@ public class Activities extends CodeunitFormevents{
                         break;
                     }
                     c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
-                    c.fields.getElementByFieldName(activityDeviceOnStoppoint).setFieldValue("");
         
                 }
                 catch(Exception e){
@@ -177,9 +173,9 @@ public class Activities extends CodeunitFormevents{
                         break;
                     }
                     c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
-                    c.fields.getElementByFieldName(activityDeviceOnStoppoint).setFieldValue("");
         
                 }
+                
                 catch(Exception e){
                     
                 }
@@ -188,34 +184,37 @@ public class Activities extends CodeunitFormevents{
                 
             //Component setup
             case "176":
-                if(componentDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
+                if(stoppointDataID == 0 || inventoryComponentRecordDataID == 0 || fromWarehouseDataID == 0 || componentAmount < 1){
                     setItemStatus(98);
                     break;
                 }
-                spcDataID = findStoppointComponentDataID(componentDataID,stoppointDataID,ses);
-                if(spcDataID == 0){
-                   try{
+                
+                try{
+                    SolutionRecord warehouseStorageInvSR = removeWarehouseInvComponent(inventoryComponentRecordDataID, componentAmount, ses);
+                    componentDataID = warehouseStorageInvSR.getValueInteger(componentStorageComponent);
+                    spcDataID = findStoppointComponentDataID(componentDataID,stoppointDataID,ses);
+
+                    if(spcDataID == 0){
                         SolutionRecordNew srn = createStoppointInvComponentRecord(stoppointDataID, componentDataID, componentAmount, ses);
                         srn.persistChanges();
-                   }
-                   catch(ValueException e){
-                        setItemStatus(98);
-
-                   }
-                   catch(Exception e){
-                   }
-                }
-                else{
-                    try{
+                        warehouseStorageInvSR.persistChanges();
+                    }
+                    else{
                         SolutionRecord sr = addStoppointInvComponent(spcDataID, componentAmount, ses);
                         sr.persistChanges();
+                        warehouseStorageInvSR.persistChanges();
                     }
-                    catch(ValueException e){
-                        //Shouldnt realyl happen as theres a check before
-                        setItemStatus(98);
-                    }
-                    catch(Exception e){
-                    }
+                    
+                    
+                    
+                }
+                catch(ValueException e){
+                    setItemStatus(98);
+                }
+                catch(IllegalArgumentException e){
+                    setItemStatus(98);
+                }
+                catch(Exception e){
                 }
                 break;
                 
@@ -235,7 +234,7 @@ public class Activities extends CodeunitFormevents{
                         SolutionRecord sr = removeStoppointInvComponent(spcDataID, componentAmount, ses);
                         sr.persistChanges();
                     }
-                    catch(ValueException e){
+                    catch(IllegalArgumentException e){
                         //Shouldnt really happen as theres a check before
                         setItemStatus(98);
                     }
@@ -245,8 +244,6 @@ public class Activities extends CodeunitFormevents{
             
             //Move component
             case "178":
-                //FromInv, InvComponent, ComponentAmount, ToInv
-                
                 if(toWarehouseDataID == 0 || inventoryComponentRecordDataID == 0 || fromWarehouseDataID == 0 || componentAmount < 1){
                     
                     setItemStatus(98);
@@ -275,8 +272,12 @@ public class Activities extends CodeunitFormevents{
                         srTo.persistChanges();
                     }    
                 }
-                catch(ValueException e){
+                catch(IllegalArgumentException e){
                     //Shouldnt really happen as theres a check before
+                    setItemStatus(98);
+                }
+                catch(ValueException e){
+                    //If you remove more than there is present
                     setItemStatus(98);
                 }
                     catch(Exception e){
@@ -290,7 +291,7 @@ public class Activities extends CodeunitFormevents{
                     SolutionRecord sr = setDeviceStorage(SelectedDeviceDataID,toWarehouseDataID,ses);
                     sr.persistChanges();
                 }
-                catch(ValueException e){
+                catch(IllegalArgumentException e){
                     setItemStatus(98);
 
                     //Invalid fields
@@ -327,13 +328,15 @@ public class Activities extends CodeunitFormevents{
             SolutionRecordNew srn = ses.getSolutionRecordNew(activityEntity);
             srn.setReference(activityCase, caseSR);
             srn.setReference(activityDevice, deviceSR);
+            srn.setReference(activitySelectedDevice, deviceSR);
+
             srn.setReference(activityStoppoint, stoppointSR);
             srn.setValueInteger(activityActivity, 171);
 
             return srn;
         }
         else{
-            throw new ValueException("Invalid DataIDs");
+            throw new IllegalArgumentException("Invalid DataIDs");
         }
         
     }
@@ -372,7 +375,7 @@ public class Activities extends CodeunitFormevents{
      * @param componentAmount int value with the amount of components being added
      * @param ses Open Session object
      * @return A SolutionRecord with the updated amount
-     * @throws ValueException on invalid DataID
+     * @throws IllegalArgumentException on invalid DataID
      * @throws Exception on system error
      */
     private SolutionRecord addWarehouseComponentInvComponent(int warehouseComponentDataID, int componentAmount, Session ses) throws Exception{
@@ -381,7 +384,7 @@ public class Activities extends CodeunitFormevents{
         
         SolutionRecord sr = ses.getSolutionRecord(componentStorageSolutionID, warehouseComponentDataID);
         if(sr.getInstanceID() == 0){
-            throw new ValueException("Invalid DataIDs");
+            throw new IllegalArgumentException("Invalid DataIDs");
         }
         
         int newAmount = sr.getValueInteger(componentStorageAmount) + componentAmount;
@@ -398,7 +401,8 @@ public class Activities extends CodeunitFormevents{
      * @param componentAmount int value with the amount of components being added
      * @param ses Open Session object
      * @return A SolutionRecord with the updated amount
-     * @throws ValueException on invalid DataID
+     * @throws IllegalArgumentException on invalid DataID
+     * @throws ValueException If the amount of components is below 0 after substraction
      * @throws Exception on system error
      */
     private SolutionRecord removeWarehouseInvComponent(int warehouseComponentDataID, int componentAmount, Session ses) throws Exception{
@@ -407,13 +411,14 @@ public class Activities extends CodeunitFormevents{
         
         SolutionRecord sr = ses.getSolutionRecord(componentStorageSolutionID, warehouseComponentDataID);
         if(sr.getInstanceID() == 0){
-            throw new ValueException("Invalid DataIDs");
+            throw new IllegalArgumentException("Invalid DataIDs");
         }
         
         int newAmount = sr.getValueInteger(componentStorageAmount) - componentAmount;
-        if(newAmount >= 0){
-            sr.setValueInteger(componentStorageAmount, newAmount);
+        if(newAmount < 0){
+            throw new ValueException("Extracted more items than was in storage");
         }
+        sr.setValueInteger(componentStorageAmount, newAmount);
         return sr;
 
     }
@@ -427,7 +432,7 @@ public class Activities extends CodeunitFormevents{
      * @param componentAmount int value with the amount being added
      * @param ses Open Session Object
      * @return SolutionRecordNew Object with the fields set
-     * @throws ValueException On invalid dataIDs
+     * @throws IllegalArgumentException On invalid dataIDs
      * @throws Exception on system error
      */
     private SolutionRecordNew createWarehouseInvComponentRecord(int warehouseDataID, int componentDataID, int componentAmount, Session ses) throws Exception{
@@ -439,7 +444,7 @@ public class Activities extends CodeunitFormevents{
         SolutionRecord warehouseSR = ses.getSolutionRecord(warehouseSolutionID, warehouseDataID);
         SolutionRecord compSR = ses.getSolutionRecord(componentSolutionID, componentDataID);
         if(warehouseSR.getInstanceID() == 0 || compSR.getInstanceID() == 0){
-            throw new ValueException("Invalid DataIDs");
+            throw new IllegalArgumentException("Invalid DataIDs");
         }
 
         SolutionRecordNew srn = ses.getSolutionRecordNew(componentStorageEntity);
@@ -480,7 +485,7 @@ public class Activities extends CodeunitFormevents{
      * @param componentAmount int value with the amount of components being added
      * @param ses Open Session object
      * @return A SolutionRecord with the updated amount
-     * @throws ValueException on invalid DataID
+     * @throws IllegalArgumentException on invalid DataID
      * @throws Exception on system error
      */
     private SolutionRecord addStoppointInvComponent(int stoppointInvDataID, int componentAmount, Session ses) throws Exception{
@@ -489,7 +494,7 @@ public class Activities extends CodeunitFormevents{
         
         SolutionRecord sr = ses.getSolutionRecord(stoppointInvSolutionID, stoppointInvDataID);
         if(sr.getInstanceID() == 0){
-            throw new ValueException("Invalid DataIDs");
+            throw new IllegalArgumentException("Invalid DataIDs");
         }
         
         int newAmount = sr.getValueInteger(stoppointInvAmount) + componentAmount;
@@ -507,7 +512,8 @@ public class Activities extends CodeunitFormevents{
      * @param componentAmount int value with the amount of components being removed
      * @param ses Open Session object
      * @return A SolutionRecord with the updated amount
-     * @throws ValueException on invalid DataID
+     * @throws IllegalArgumentException on invalid DataID
+     * @throws ValueException If the amount of components is below 0 after substraction
      * @throws Exception on system error
      */
     private SolutionRecord removeStoppointInvComponent(int stoppointInvDataID, int componentAmount, Session ses) throws Exception{
@@ -516,13 +522,15 @@ public class Activities extends CodeunitFormevents{
         
         SolutionRecord sr = ses.getSolutionRecord(stoppointInvSolutionID, stoppointInvDataID);
         if(sr.getInstanceID() == 0){
-            throw new ValueException("Invalid DataIDs");
+            throw new IllegalArgumentException("Invalid DataIDs");
         }
         
         int newAmount = sr.getValueInteger(stoppointInvAmount) - componentAmount;
-        if(newAmount >= 0){
-            sr.setValueInteger(stoppointInvAmount, newAmount);
+        if(newAmount < 0){
+            throw new ValueException("Extracted more items than was in storage");
         }
+        sr.setValueInteger(stoppointInvAmount, newAmount);
+
         return sr;
     }
     
@@ -535,7 +543,7 @@ public class Activities extends CodeunitFormevents{
      * @param componentAmount int value with the amount being added
      * @param ses Open Session Object
      * @return SolutionRecordNew Object with the fields set
-     * @throws ValueException On invalid dataIDs
+     * @throws IllegalArgumentException On invalid dataIDs
      * @throws Exception on system error
      */
     private SolutionRecordNew createStoppointInvComponentRecord(int stoppointDataID, int componentDataID, int componentAmount, Session ses) throws Exception{
@@ -547,7 +555,7 @@ public class Activities extends CodeunitFormevents{
         SolutionRecord spSR = ses.getSolutionRecord(stoppointSolutionID, stoppointDataID);
         SolutionRecord compSR = ses.getSolutionRecord(componentSolutionID, componentDataID);
         if(spSR.getInstanceID() == 0 || compSR.getInstanceID() == 0){
-            throw new ValueException("Invalid DataIDs");
+            throw new IllegalArgumentException("Invalid DataIDs");
         }
 
         SolutionRecordNew srn = ses.getSolutionRecordNew(stoppointInvEntity);
@@ -566,7 +574,7 @@ public class Activities extends CodeunitFormevents{
      * @param stoppointDataID int value with DataID of the stoppoint
      * @param ses Open Session object
      * @return A SolutionRecord th
-     * @throws ValueException If either of the DataIDs are not valid records
+     * @throws IllegalArgumentException If either of the DataIDs are not valid records
      * @throw Exception General systems error 
      */
     private SolutionRecord setDeviceStoppoint(int deviceDataID,int stoppointDataID,Session ses) throws Exception{
@@ -581,7 +589,7 @@ public class Activities extends CodeunitFormevents{
             deviceSR.setReference(deviceStopPoint, stoppointSR);
         }
         else{
-            throw new ValueException("Invalid DataIDs");
+            throw new IllegalArgumentException("Invalid DataIDs");
         }
         return deviceSR;
     }
@@ -594,7 +602,7 @@ public class Activities extends CodeunitFormevents{
      * @param warehouseDataID int value with DataID of the warehouse
      * @param ses Open Session object
      * @return A SolutionRecord th
-     * @throws ValueException If either of the DataIDs are not valid records
+     * @throws IllegalArgumentException If either of the DataIDs are not valid records
      * @throw Exception General systems error 
      */
     private SolutionRecord setDeviceStorage(int deviceDataID,int warehouseDataID,Session ses) throws Exception{
@@ -608,7 +616,7 @@ public class Activities extends CodeunitFormevents{
             deviceSR.setReference(deviceStorageLoc, warehouseSR);
         }
         else{
-            throw new ValueException("Invalid DataIDs");
+            throw new IllegalArgumentException("Invalid DataIDs");
         }
         return deviceSR;
         
