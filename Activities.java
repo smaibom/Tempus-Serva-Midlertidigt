@@ -106,7 +106,7 @@ public class Activities extends CodeunitFormevents{
                 
             //Change device
             case "170":
-                if(SelectedDeviceDataID == 0 || deviceAtStoppointDataID == 0 || stoppointDataID == 0 || toWarehouseDataID == 0 || caseDataID == 0){
+                if(SelectedDeviceDataID == 0 || deviceAtStoppointDataID == 0 || stoppointDataID == 0 || toWarehouseDataID == 0 || caseDataID == 0 || SelectedDeviceDataID == deviceAtStoppointDataID){
                     setItemStatus(98);
                     break;
                 }
@@ -209,9 +209,13 @@ public class Activities extends CodeunitFormevents{
             SolutionRecord spSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
             SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
                     
-            DeviceFunctions dev = new DeviceFunctions();
-            dev.setStoppoint(devInstallSR, spSR);
-            dev.setStorage(devUninstallSR, warehouseSR);
+            DeviceFunctions df = new DeviceFunctions();
+            if(!(df.isCountdownModule(devInstallSR) && df.isCountdownModule(devUninstallSR))){
+                setItemStatus(98);
+                return;
+            }
+            df.setStoppoint(devInstallSR, spSR);
+            df.setStorage(devUninstallSR, warehouseSR);
                     
             SolutionRecordNew setupActivityRecord = createSetupActivity(ses, caseDataID, spSR, devInstallSR);
             
@@ -233,8 +237,12 @@ public class Activities extends CodeunitFormevents{
         try{
             SolutionRecord spSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
             SolutionRecord deviceSR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
-            DeviceFunctions dev = new DeviceFunctions();
-            dev.setStoppoint(deviceSR, spSR);
+            DeviceFunctions df = new DeviceFunctions();
+            if(!df.isCountdownModule(deviceSR)){
+                setItemStatus(98);
+                return;
+            }
+            df.setStoppoint(deviceSR, spSR);
             c.fields.getElementByFieldName(activityDevice).setFieldValue(SelectedDeviceDataID);
             deviceSR.persistChanges();
         }
@@ -250,9 +258,13 @@ public class Activities extends CodeunitFormevents{
         try{
             SolutionRecord deviceSR = Util.getSolutionRecord(deviceEntity, deviceAtStoppointDataID, ses);
             SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
-            
-            DeviceFunctions dev = new DeviceFunctions();
-            dev.setStorage(deviceSR, warehouseSR);
+
+            DeviceFunctions df = new DeviceFunctions();
+            if(!df.isCountdownModule(deviceSR)){
+                setItemStatus(98);
+                return;
+            }
+            df.setStorage(deviceSR, warehouseSR);
             
             c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
             deviceSR.persistChanges();
