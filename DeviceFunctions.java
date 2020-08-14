@@ -19,6 +19,7 @@ public class DeviceFunctions {
     private final String deviceStorageLoc = "STORAGELOCATION";
     private final String deviceCat = "DEVICECATEGORY";
     private final String batteryDef = "Batteri";
+    private final String countdownModuleDef = "Countdown";
 
         
     /**
@@ -70,17 +71,24 @@ public class DeviceFunctions {
     }    
     
     /**
-     * Checks if device is a multiQ battery gen one or two
+     * Checks if device is a battery type
      * @param deviceSR SolutionRecord of the device
      * @return True if it is a multiQ battery gen one or two, false otherwise
      * @throws Exception On System error
      */
-    public Boolean isMultiQBattery(SolutionRecord deviceSR) throws Exception{
+    public Boolean isBattery(SolutionRecord deviceSR) throws Exception{
         return batteryDef.equals(deviceSR.getValue(deviceCat));
     }
     
-    
-    
+    /**
+     * Checks if device is a countdown module type
+     * @param deviceSR SolutionRecord of the device
+     * @return True if it is a multiQ battery gen one or two, false otherwise
+     * @throws Exception On System error
+     */
+    public Boolean isCountdownModule(SolutionRecord deviceSR) throws Exception{
+        return countdownModuleDef.equals(deviceSR.getValue(deviceCat));
+    }
     
     
 }

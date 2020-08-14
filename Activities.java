@@ -28,10 +28,15 @@ public class Activities extends CodeunitFormevents{
     
     //TempusServa string names on system, change here if system value is changed
     private final String stoppointEntity = "stoppoint";
-    
     private final String deviceEntity = "devices";
-    
     private final String warehouseEntity = "warehouse";
+    private final String caseEntity = "workorder";
+    private final String stoppointInvEntity = "stoppointinventory";
+    private final String componentEntity = "components";
+    
+    private final String componentStorageEntity = "warehouseallocation";
+    private final String componentStorageComponent = "COMPONENT";
+    
     
     private final String activityEntity = "activities";
     private final String activityCase = "WORKORDER";
@@ -45,18 +50,11 @@ public class Activities extends CodeunitFormevents{
     private final String activityToInventory = "TOINVENTORY";
     private final String activityFromInventory = "FROMINVENTORY";
     private final String activityInventoryComponent = "INVENTORYCOMPONENT";
+    private final String activityBatteryOnStoppoint = "BATTERYONSTOPPOINT";
     private final String activitySupplier = "SUPPLIER";
     
 
-    private final String caseEntity = "workorder";
-    
-    private final String stoppointInvEntity = "stoppointinventory";
 
-    private final String componentEntity = "components";
-    
-    
-    private final String componentStorageEntity = "warehouseallocation";
-    private final String componentStorageComponent = "COMPONENT";
     
     
     @Override
@@ -78,6 +76,7 @@ public class Activities extends CodeunitFormevents{
         int componentDataID = Parser.getInteger(c.fields.getElementByFieldName(activityComponentInstalled).FieldValue);
         int inventoryComponentRecordDataID = Parser.getInteger(c.fields.getElementByFieldName(activityInventoryComponent).FieldValue);
         int componentAmount = Parser.getInteger(c.fields.getElementByFieldName(activityComponentAmountInstalled).FieldValue);
+        int batteryOnStoppointDataID = Parser.getInteger(c.fields.getElementByFieldName(activityBatteryOnStoppoint).FieldValue);
         //int supplierDataID = Parser.getInteger(c.fields.getElementByFieldName(activitySupplier).FieldValue);
         
         
@@ -94,9 +93,17 @@ public class Activities extends CodeunitFormevents{
                         break;
                 }
                 setupBattery(SelectedDeviceDataID,stoppointDataID,ses);
-
-                
                 break;
+                
+            //Remove Battery from stoppoint
+            case "169":
+                if(stoppointDataID == 0 || batteryOnStoppointDataID == 0 || toWarehouseDataID == 0){
+                        setItemStatus(98);
+                        break;
+                }
+                removeBattery(batteryOnStoppointDataID,toWarehouseDataID,ses);
+                break;
+                
             //Change device
             case "170":
                 if(SelectedDeviceDataID == 0 || deviceAtStoppointDataID == 0 || stoppointDataID == 0 || toWarehouseDataID == 0 || caseDataID == 0){
@@ -388,7 +395,7 @@ public class Activities extends CodeunitFormevents{
             SolutionRecord stoppointSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
 
             DeviceFunctions df = new DeviceFunctions();
-            if(!df.isMultiQBattery(batterySR)){
+            if(!df.isBattery(batterySR)){
                 setItemStatus(98);
                 return;
             }
@@ -401,6 +408,24 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
+    private void removeBattery(int batteryOnStoppointDataID, int toWarehouseDataID, Session ses){
+        try{
+            SolutionRecord batterySR = Util.getSolutionRecord(deviceEntity, batteryOnStoppointDataID, ses);
+            SolutionRecord storageSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
+            
+            DeviceFunctions df = new DeviceFunctions();
+            if(!df.isBattery(batterySR)){
+                setItemStatus(98);
+                return;
+            }
+            df.setStorage(batterySR, storageSR);
+            batterySR.persistChanges();
+
+        }
+        catch(Exception e){
+            setItemStatus(98);
+        }
+    }
 
     
 
