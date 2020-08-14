@@ -30,8 +30,6 @@ public class Activities extends CodeunitFormevents{
     private final String stoppointEntity = "stoppoint";
     
     private final String deviceEntity = "devices";
-    private final String deviceStopPoint = "INSTALLEDATSTOPPOINT";
-    private final String deviceStorageLoc = "STORAGELOCATION";
     
     private final String warehouseEntity = "warehouse";
     
@@ -53,16 +51,11 @@ public class Activities extends CodeunitFormevents{
     private final String caseEntity = "workorder";
     
     private final String stoppointInvEntity = "stoppointinventory";
-    private final String stoppointInvStoppoint = "STOPPOINT";
-    private final String stoppointInvComponent = "COMPONENT";
-    private final String stoppointInvAmount = "AMOUNT";
-    
+
     private final String componentEntity = "components";
     
     
     private final String componentStorageEntity = "warehouseallocation";
-    private final String componentStorageAmount = "AMOUNT";
-    private final String componentStorageWarehouse = "WAREHOUSE";
     private final String componentStorageComponent = "COMPONENT";
     
     
@@ -106,155 +99,61 @@ public class Activities extends CodeunitFormevents{
                 break;
             //Change device
             case "170":
-                try{
-                    
-                    SolutionRecord devInstallSR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
-                    SolutionRecord devUninstallSR = Util.getSolutionRecord(deviceEntity, deviceAtStoppointDataID, ses);
-                    
-                    SolutionRecord spSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
-                    SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
-                    
-                    DeviceFunctions dev = new DeviceFunctions();
-                    dev.setStoppoint(devInstallSR, spSR);
-                    dev.setStorage(devUninstallSR, warehouseSR);
-                    
-                    
-                    SolutionRecordNew setupActivityRecord = createSetupActivity(ses, caseDataID, spSR, devInstallSR);
-                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
-                    c.fields.getElementByFieldName(activityActivity).setFieldValue(172);
-                    devInstallSR.persistChanges();
-                    devUninstallSR.persistChanges();
-                    setupActivityRecord.persistChanges(false);
-                    
-                }
-                catch(IllegalArgumentException e){
+                if(SelectedDeviceDataID == 0 || deviceAtStoppointDataID == 0 || stoppointDataID == 0 || toWarehouseDataID == 0 || caseDataID == 0){
                     setItemStatus(98);
-                    //Invalid fields
+                    break;
                 }
-                catch(Exception e){
-                    //Figure out a better exception
-                }
+                changeDevice(SelectedDeviceDataID,deviceAtStoppointDataID,stoppointDataID,toWarehouseDataID,caseDataID,ses);
                 break;
                 
                 
             //Setup device at stoppoint
             case "171":
-                try{
-                    SolutionRecord spSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
-                    SolutionRecord deviceSR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
-                    DeviceFunctions dev = new DeviceFunctions();
-                    dev.setStoppoint(deviceSR, spSR);
-                    c.fields.getElementByFieldName(activityDevice).setFieldValue(SelectedDeviceDataID);
-                    deviceSR.persistChanges();
-                }
-                catch(IllegalArgumentException e){
+                if(stoppointDataID == 0 || SelectedDeviceDataID == 0){
                     setItemStatus(98);
-
-                    //Invalid fields
+                    break;
                 }
-                catch(Exception e){
-                    //Figure out a better exception
-                }
+                setupDeviceOnStoppoint(stoppointDataID,SelectedDeviceDataID,ses);
                 break;
                 
                 
             //Remove device from stoppoint
             case "172":
-                try{
-                    
-                    SolutionRecord deviceSR = Util.getSolutionRecord(deviceEntity, deviceAtStoppointDataID, ses);
-                    SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
-                    DeviceFunctions dev = new DeviceFunctions();
-                    dev.setStorage(deviceSR, warehouseSR);
-                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
-                    deviceSR.persistChanges();
-
-                }
-                catch(IllegalArgumentException e){
+                if(deviceAtStoppointDataID == 0 || toWarehouseDataID == 0){
                     setItemStatus(98);
-
-                    //Invalid fields
+                    break;
                 }
-                catch(Exception e){
-                    //Figure out a better exception
-                }
+                removeDeviceFromStoppoint(deviceAtStoppointDataID,toWarehouseDataID,ses);
                 break;
                 
                 
             //Restart device
             case "174":
-                try{
-                    if(stoppointDataID == 0 || deviceAtStoppointDataID == 0){
+                if(stoppointDataID == 0 || deviceAtStoppointDataID == 0){
                         setItemStatus(98);
                         break;
-                    }
-                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
-        
                 }
-                catch(Exception e){
-                    
-                }
+                restartDevice(deviceAtStoppointDataID);
                 break;
                 
                 
             //Cablecheck
             case "175":
-                try{
-                    if(stoppointDataID == 0 || deviceAtStoppointDataID == 0){
+                if(stoppointDataID == 0 || deviceAtStoppointDataID == 0){
                         setItemStatus(98);
                         break;
-                    }
-                    c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
-        
                 }
-                
-                catch(Exception e){
-                    
-                }
+                cableCheck(deviceAtStoppointDataID);
                 break;
                 
                 
             //Component setup
             case "176":
-                if(stoppointDataID == 0 || inventoryComponentRecordDataID == 0 || fromWarehouseDataID == 0 || componentAmount < 1){
+                if(inventoryComponentRecordDataID == 0 || componentDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
                     setItemStatus(98);
                     break;
                 }
-                
-                try{
-                    WarehouseComponentFunctions whf = new WarehouseComponentFunctions();
-                    StoppointComponentFunctions spcf = new StoppointComponentFunctions();
-                    
-                    SolutionRecord warehouseStorageInvSR = Util.getSolutionRecord(componentStorageEntity, inventoryComponentRecordDataID, ses);
-                    whf.removeComponentsFromInventory(warehouseStorageInvSR, componentAmount);
-                    componentDataID = warehouseStorageInvSR.getValueInteger(componentStorageComponent);
-                    spcDataID = spcf.findStoppointComponentDataID(componentDataID,stoppointDataID,ses);
-
-                    if(spcDataID == 0){
-                        SolutionRecord stoppointSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
-                        SolutionRecord componentSR = Util.getSolutionRecord(componentEntity, componentDataID, ses);
-                        SolutionRecordNew srn = spcf.createStoppointInvComponentRecord(stoppointSR, componentSR, componentAmount, ses);
-                        srn.persistChanges();
-                        warehouseStorageInvSR.persistChanges();
-                    }
-                    else{
-                        SolutionRecord sr = Util.getSolutionRecord(stoppointInvEntity, spcDataID, ses);
-                        spcf.addStoppointInvComponent(sr, componentAmount);
-                        sr.persistChanges();
-                        warehouseStorageInvSR.persistChanges();
-                    }
-                    
-                    
-                    
-                }
-                catch(ValueException e){
-                    setItemStatus(98);
-                }
-                catch(IllegalArgumentException e){
-                    setItemStatus(98);
-                }
-                catch(Exception e){
-                }
+                componentSetup(inventoryComponentRecordDataID,componentDataID,stoppointDataID,componentAmount,ses);
                 break;
                 
                 
@@ -264,103 +163,27 @@ public class Activities extends CodeunitFormevents{
                     setItemStatus(98);
                     break;
                 }
-                
-                StoppointComponentFunctions spcf = new StoppointComponentFunctions();
-                
-                spcDataID = spcf.findStoppointComponentDataID(componentDataID,stoppointDataID,ses);
-                if(spcDataID == 0){
-                    //Do nothing, we cant remove stuff that dont exist
-                }
-                else{
-                    try{
-                        SolutionRecord spcSR = Util.getSolutionRecord(stoppointInvEntity, spcDataID, ses);
-                        spcf.removeStoppointInvComponent(spcSR,componentAmount);
-                        spcSR.persistChanges();
-                    }
-                    catch(IllegalArgumentException e){
-                        //Shouldnt really happen as theres a check before
-                        setItemStatus(98);
-                    }
-                    catch(ValueException e){
-                        setItemStatus(98);
-                    }
-                    catch(Exception e){
-                    }
-                }
+                componentTakedown(componentDataID,stoppointDataID,componentAmount,ses);
                 break;
             
             //Move component
             case "178":
-                if(toWarehouseDataID == 0 || inventoryComponentRecordDataID == 0 || fromWarehouseDataID == 0 || componentAmount < 1){
-                    
+                if(toWarehouseDataID == 0 || inventoryComponentRecordDataID == 0 || componentAmount < 1){
                     setItemStatus(98);
-                    
                     break;
                 }
-                
-                try{
-                    WarehouseComponentFunctions whf = new WarehouseComponentFunctions();
-
-                    
-                    
-                    SolutionRecord srFrom = Util.getSolutionRecord(componentStorageEntity, inventoryComponentRecordDataID, ses);
-                    whf.removeComponentsFromInventory(srFrom,componentAmount);
-                    int inventoryComponentDataID = srFrom.getValueInteger(componentStorageComponent);
-                    int toWarehouseInventoryComponentDataID = whf.findWarehouseComponentDataID(inventoryComponentDataID, toWarehouseDataID, ses);
-                    
-
-                    if(toWarehouseInventoryComponentDataID == 0){
-                        
-                        SolutionRecord warehouseToSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
-                        SolutionRecord componentSR = Util.getSolutionRecord(componentEntity, inventoryComponentDataID, ses);
-                        SolutionRecordNew srnTo = whf.createWarehouseInvComponentRecord(warehouseToSR, componentSR, componentAmount, ses);
-
-                        srFrom.persistChanges();
-                        srnTo.persistChanges();
-
-                    }
-                    else{
-                        //Update record
-                        
-                        SolutionRecord srTo = Util.getSolutionRecord(componentStorageEntity, toWarehouseInventoryComponentDataID, ses);
-                        whf.addInventoryComponent(srTo, componentAmount);
-                        srFrom.persistChanges();
-                        srTo.persistChanges();
-                    }    
-                }
-                catch(IllegalArgumentException e){
-                    //Shouldnt really happen as theres a check before
-                    setItemStatus(98);
-                }
-                catch(ValueException e){
-                    //If you remove more than there is present
-                    setItemStatus(98);
-                }
-                    catch(Exception e){
-                }
-                
-                
+                moveComponent(inventoryComponentRecordDataID,toWarehouseDataID,componentAmount,ses);
                 break;
             
             //Move device
             case "179":
-                try{
-                    SolutionRecord deviceSR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
-                    SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
-                    DeviceFunctions dev = new DeviceFunctions();
-                    dev.setStorage(deviceSR, warehouseSR);
-                    deviceSR.persistChanges();
-                }
-                catch(IllegalArgumentException e){
+                if(SelectedDeviceDataID == 0 || toWarehouseDataID == 0){
                     setItemStatus(98);
-
-                    //Invalid fields
+                    break;
                 }
-                catch(Exception e){
-                    //Figure out a better exception
-                }
-                
+                moveDevice(SelectedDeviceDataID,toWarehouseDataID,ses);
                 break;
+                
             default:
                 break;
         } 
@@ -372,10 +195,188 @@ public class Activities extends CodeunitFormevents{
     
     
     
+    private void changeDevice(int SelectedDeviceDataID,int deviceAtStoppointDataID,int stoppointDataID, int toWarehouseDataID, int caseDataID, Session ses){
+        try{
+            SolutionRecord devInstallSR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
+            SolutionRecord devUninstallSR = Util.getSolutionRecord(deviceEntity, deviceAtStoppointDataID, ses);
+            SolutionRecord spSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
+            SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
+                    
+            DeviceFunctions dev = new DeviceFunctions();
+            dev.setStoppoint(devInstallSR, spSR);
+            dev.setStorage(devUninstallSR, warehouseSR);
+                    
+            SolutionRecordNew setupActivityRecord = createSetupActivity(ses, caseDataID, spSR, devInstallSR);
+            
+            c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
+            c.fields.getElementByFieldName(activityActivity).setFieldValue(172);
+            devInstallSR.persistChanges();
+            devUninstallSR.persistChanges();
+            setupActivityRecord.persistChanges(false);
+        }
+        catch(IllegalArgumentException e){
+            setItemStatus(98);
+        }
+        catch(Exception e){
+            //Figure out a better exception
+        }
+    }
     
+    private void setupDeviceOnStoppoint(int stoppointDataID, int SelectedDeviceDataID, Session ses){
+        try{
+            SolutionRecord spSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
+            SolutionRecord deviceSR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
+            DeviceFunctions dev = new DeviceFunctions();
+            dev.setStoppoint(deviceSR, spSR);
+            c.fields.getElementByFieldName(activityDevice).setFieldValue(SelectedDeviceDataID);
+            deviceSR.persistChanges();
+        }
+        catch(IllegalArgumentException e){
+            setItemStatus(98);
+        }
+        catch(Exception e){
+        }
 
-
+    }
     
+    private void removeDeviceFromStoppoint(int deviceAtStoppointDataID, int toWarehouseDataID, Session ses){
+        try{
+            SolutionRecord deviceSR = Util.getSolutionRecord(deviceEntity, deviceAtStoppointDataID, ses);
+            SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
+            
+            DeviceFunctions dev = new DeviceFunctions();
+            dev.setStorage(deviceSR, warehouseSR);
+            
+            c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
+            deviceSR.persistChanges();
+
+        }
+        catch(IllegalArgumentException e){
+            setItemStatus(98);
+        }
+        catch(Exception e){
+        }
+    }
+    
+    private void restartDevice(int deviceAtStoppointDataID){
+        c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
+    }
+            
+    private void cableCheck(int deviceAtStoppointDataID){
+        c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
+    }
+    
+    private void componentSetup(int inventoryComponentRecordDataID, int componentDataID, int stoppointDataID,int componentAmount, Session ses){
+        try{
+            WarehouseComponentFunctions whf = new WarehouseComponentFunctions();
+            StoppointComponentFunctions spcf = new StoppointComponentFunctions();
+
+            SolutionRecord warehouseStorageInvSR = Util.getSolutionRecord(componentStorageEntity, inventoryComponentRecordDataID, ses);
+            whf.removeComponentsFromInventory(warehouseStorageInvSR, componentAmount);
+
+            componentDataID = warehouseStorageInvSR.getValueInteger(componentStorageComponent);
+            int spcDataID = spcf.findStoppointComponentDataID(componentDataID,stoppointDataID,ses);
+
+            if(spcDataID == 0){
+                SolutionRecord stoppointSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
+                SolutionRecord componentSR = Util.getSolutionRecord(componentEntity, componentDataID, ses);
+                SolutionRecordNew srn = spcf.createStoppointInvComponentRecord(stoppointSR, componentSR, componentAmount, ses);
+                srn.persistChanges();
+                warehouseStorageInvSR.persistChanges();
+            }
+            else{
+                SolutionRecord sr = Util.getSolutionRecord(stoppointInvEntity, spcDataID, ses);
+                spcf.addStoppointInvComponent(sr, componentAmount);
+                sr.persistChanges();
+                warehouseStorageInvSR.persistChanges();
+            }
+
+        }
+        catch(ValueException e){
+            setItemStatus(98);
+        }
+        catch(IllegalArgumentException e){
+            setItemStatus(98);
+        }
+        catch(Exception e){
+        }
+    }
+    
+    private void componentTakedown(int componentDataID, int stoppointDataID,int componentAmount, Session ses){
+        StoppointComponentFunctions spcf = new StoppointComponentFunctions();
+        int spcDataID = spcf.findStoppointComponentDataID(componentDataID,stoppointDataID,ses);
+        if(spcDataID == 0){
+            //Do nothing, we cant remove stuff that dont exist
+            return;
+        }
+        try{
+            SolutionRecord spcSR = Util.getSolutionRecord(stoppointInvEntity, spcDataID, ses);
+            spcf.removeStoppointInvComponent(spcSR,componentAmount);
+            spcSR.persistChanges();
+        }
+        catch(IllegalArgumentException e){
+            setItemStatus(98);
+        }
+        catch(ValueException e){
+            setItemStatus(98);
+        }
+        catch(Exception e){
+        }
+    }
+    
+    private void moveComponent(int inventoryComponentRecordDataID, int toWarehouseDataID, int componentAmount, Session ses){
+        
+        try{
+            WarehouseComponentFunctions whf = new WarehouseComponentFunctions();
+
+            SolutionRecord srFrom = Util.getSolutionRecord(componentStorageEntity, inventoryComponentRecordDataID, ses);
+            whf.removeComponentsFromInventory(srFrom,componentAmount);
+            
+            int inventoryComponentDataID = srFrom.getValueInteger(componentStorageComponent);
+            int toWarehouseInventoryComponentDataID = whf.findWarehouseComponentDataID(inventoryComponentDataID, toWarehouseDataID, ses);
+
+            //Record dosent exist, Create it
+            if(toWarehouseInventoryComponentDataID == 0){
+                SolutionRecord warehouseToSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
+                SolutionRecord componentSR = Util.getSolutionRecord(componentEntity, inventoryComponentDataID, ses);
+                SolutionRecordNew srnTo = whf.createWarehouseInvComponentRecord(warehouseToSR, componentSR, componentAmount, ses);
+                srFrom.persistChanges();
+                srnTo.persistChanges();
+            }
+            else{
+                //Update record
+                SolutionRecord srTo = Util.getSolutionRecord(componentStorageEntity, toWarehouseInventoryComponentDataID, ses);
+                whf.addInventoryComponent(srTo, componentAmount);
+                srFrom.persistChanges();
+                srTo.persistChanges();
+            }    
+        }
+        catch(IllegalArgumentException e){
+            //Shouldnt really happen as theres a check before
+            setItemStatus(98);
+        }
+        catch(ValueException e){
+            //If you remove more than there is present
+            setItemStatus(98);
+        }
+            catch(Exception e){
+        }
+    }
+
+    private void moveDevice(int SelectedDeviceDataID, int toWarehouseDataID, Session ses){
+        try{
+            SolutionRecord deviceSR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
+            SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
+            DeviceFunctions dev = new DeviceFunctions();
+            dev.setStorage(deviceSR, warehouseSR);
+            deviceSR.persistChanges();
+        }
+        catch(IllegalArgumentException e){
+            setItemStatus(98);
+        }
+        catch(Exception e){
+        }
+    }
     
     
     
