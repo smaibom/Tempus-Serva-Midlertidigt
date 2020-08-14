@@ -78,9 +78,7 @@ public class Activities extends CodeunitFormevents{
         int componentAmount = Parser.getInteger(c.fields.getElementByFieldName(activityComponentAmountInstalled).FieldValue);
         int batteryOnStoppointDataID = Parser.getInteger(c.fields.getElementByFieldName(activityBatteryOnStoppoint).FieldValue);
         //int supplierDataID = Parser.getInteger(c.fields.getElementByFieldName(activitySupplier).FieldValue);
-        
-        
-        
+        String FieldValue = c.fields.getElementByFieldName("StatusID").FieldValue;
 
         Session ses = SessionFactory.getSession(this);
 
@@ -224,12 +222,13 @@ public class Activities extends CodeunitFormevents{
             devInstallSR.persistChanges();
             devUninstallSR.persistChanges();
             setupActivityRecord.persistChanges(false);
+            setItemStatus(100);
         }
         catch(IllegalArgumentException e){
             setItemStatus(98);
         }
         catch(Exception e){
-            //Figure out a better exception
+            setItemStatus(101);
         }
     }
     
@@ -245,11 +244,13 @@ public class Activities extends CodeunitFormevents{
             df.setStoppoint(deviceSR, spSR);
             c.fields.getElementByFieldName(activityDevice).setFieldValue(SelectedDeviceDataID);
             deviceSR.persistChanges();
+            setItemStatus(100);
         }
         catch(IllegalArgumentException e){
             setItemStatus(98);
         }
         catch(Exception e){
+            setItemStatus(101);
         }
 
     }
@@ -268,21 +269,25 @@ public class Activities extends CodeunitFormevents{
             
             c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
             deviceSR.persistChanges();
+            setItemStatus(100);
 
         }
         catch(IllegalArgumentException e){
             setItemStatus(98);
         }
         catch(Exception e){
+            setItemStatus(101);
         }
     }
     
     private void restartDevice(int deviceAtStoppointDataID){
         c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
+        setItemStatus(100);
     }
             
     private void cableCheck(int deviceAtStoppointDataID){
         c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
+        setItemStatus(100);
     }
     
     private void componentSetup(int inventoryComponentRecordDataID, int componentDataID, int stoppointDataID,int componentAmount, Session ses){
@@ -309,6 +314,7 @@ public class Activities extends CodeunitFormevents{
                 sr.persistChanges();
                 warehouseStorageInvSR.persistChanges();
             }
+            setItemStatus(100);
 
         }
         catch(ValueException e){
@@ -318,6 +324,7 @@ public class Activities extends CodeunitFormevents{
             setItemStatus(98);
         }
         catch(Exception e){
+            setItemStatus(101);
         }
     }
     
@@ -332,6 +339,7 @@ public class Activities extends CodeunitFormevents{
             SolutionRecord spcSR = Util.getSolutionRecord(stoppointInvEntity, spcDataID, ses);
             spcf.removeStoppointInvComponent(spcSR,componentAmount);
             spcSR.persistChanges();
+            setItemStatus(100);
         }
         catch(IllegalArgumentException e){
             setItemStatus(98);
@@ -340,6 +348,7 @@ public class Activities extends CodeunitFormevents{
             setItemStatus(98);
         }
         catch(Exception e){
+            setItemStatus(101);
         }
     }
     
@@ -368,7 +377,8 @@ public class Activities extends CodeunitFormevents{
                 whf.addInventoryComponent(srTo, componentAmount);
                 srFrom.persistChanges();
                 srTo.persistChanges();
-            }    
+            }
+            setItemStatus(100);
         }
         catch(IllegalArgumentException e){
             //Shouldnt really happen as theres a check before
@@ -379,6 +389,7 @@ public class Activities extends CodeunitFormevents{
             setItemStatus(98);
         }
             catch(Exception e){
+            setItemStatus(101);
         }
     }
 
@@ -393,11 +404,13 @@ public class Activities extends CodeunitFormevents{
             }
             dev.setStorage(deviceSR, warehouseSR);
             deviceSR.persistChanges();
+            setItemStatus(100);
         }
         catch(IllegalArgumentException e){
             setItemStatus(98);
         }
         catch(Exception e){
+            setItemStatus(101);
         }
     }
     
@@ -413,10 +426,10 @@ public class Activities extends CodeunitFormevents{
             }
             df.setStoppoint(batterySR, stoppointSR);
             batterySR.persistChanges();
-
+            setItemStatus(100);
         }
         catch(Exception e){
-            setItemStatus(98);
+            setItemStatus(101);
         }
     }
     
@@ -432,10 +445,11 @@ public class Activities extends CodeunitFormevents{
             }
             df.setStorage(batterySR, storageSR);
             batterySR.persistChanges();
+            setItemStatus(100);
 
         }
         catch(Exception e){
-            setItemStatus(98);
+            setItemStatus(101);
         }
     }
 
