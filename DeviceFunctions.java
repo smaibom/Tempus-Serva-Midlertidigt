@@ -17,7 +17,9 @@ public class DeviceFunctions {
 
     private final String deviceStopPoint = "INSTALLEDATSTOPPOINT";
     private final String deviceStorageLoc = "STORAGELOCATION";
-    
+    private final String deviceCat = "DEVICECATEGORY";
+    private final String batteryDef = "Batteri";
+
         
     /**
      * Sets the storage location reference to nothing and the stoppoint reference to the given Record
@@ -57,7 +59,25 @@ public class DeviceFunctions {
         
     }
     
+    /**
+     * Checks if device is located at a stoppoint
+     * @param deviceSR SolutionRecord with the device in question
+     * @return True if it is set at a stoppoint, False otherwise
+     * @throws Exception On System error
+     */
+    public Boolean isSetAtStoppoint(SolutionRecord deviceSR) throws Exception{
+        return (deviceSR.getValueInteger(deviceStopPoint) != 0);
+    }    
     
+    /**
+     * Checks if device is a multiQ battery gen one or two
+     * @param deviceSR SolutionRecord of the device
+     * @return True if it is a multiQ battery gen one or two, false otherwise
+     * @throws Exception On System error
+     */
+    public Boolean isMultiQBattery(SolutionRecord deviceSR) throws Exception{
+        return batteryDef.equals(deviceSR.getValue(deviceCat));
+    }
     
     
     

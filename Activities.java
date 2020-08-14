@@ -80,7 +80,6 @@ public class Activities extends CodeunitFormevents{
         int componentAmount = Parser.getInteger(c.fields.getElementByFieldName(activityComponentAmountInstalled).FieldValue);
         //int supplierDataID = Parser.getInteger(c.fields.getElementByFieldName(activitySupplier).FieldValue);
         
-        int spcDataID;
         
         
 
@@ -94,7 +93,8 @@ public class Activities extends CodeunitFormevents{
                         setItemStatus(98);
                         break;
                 }
-                SolutionRecord batterySR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
+                setupBattery(SelectedDeviceDataID,stoppointDataID,ses);
+
                 
                 break;
             //Change device
@@ -368,6 +368,10 @@ public class Activities extends CodeunitFormevents{
             SolutionRecord deviceSR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
             SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
             DeviceFunctions dev = new DeviceFunctions();
+            if(dev.isSetAtStoppoint(deviceSR)){
+                setItemStatus(98);
+                return;
+            }
             dev.setStorage(deviceSR, warehouseSR);
             deviceSR.persistChanges();
         }
@@ -378,7 +382,24 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
-    
+    private void setupBattery(int SelectedDeviceDataID, int stoppointDataID, Session ses){
+        try{
+            SolutionRecord batterySR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
+            SolutionRecord stoppointSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
+
+            DeviceFunctions df = new DeviceFunctions();
+            if(!df.isMultiQBattery(batterySR)){
+                setItemStatus(98);
+                return;
+            }
+            df.setStoppoint(batterySR, stoppointSR);
+            batterySR.persistChanges();
+
+        }
+        catch(Exception e){
+            setItemStatus(98);
+        }
+    }
     
 
     
