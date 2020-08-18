@@ -95,7 +95,7 @@ public class Activities extends CodeunitFormevents{
         
         
         Session ses = SessionFactory.getSession(this);
-        
+        Util util = new Util(ses);
         
         switch(typeField){
             //Setup battery
@@ -104,7 +104,7 @@ public class Activities extends CodeunitFormevents{
                         setItemStatus(98);
                         break;
                 }
-                setupBattery(SelectedDeviceDataID,stoppointDataID,ses);
+                setupBattery(SelectedDeviceDataID,stoppointDataID,util);
                 break;
                 
             //Remove Battery from stoppoint
@@ -114,7 +114,7 @@ public class Activities extends CodeunitFormevents{
                     setItemStatus(98);
                     break;
                 }
-                removeBattery(batteryOnStoppointDataID,toWarehouseDataID,ses);
+                removeBattery(batteryOnStoppointDataID,toWarehouseDataID,util);
                 break;
                 
             //Change deviceCountdown
@@ -123,7 +123,7 @@ public class Activities extends CodeunitFormevents{
                     setItemStatus(98);
                     break;
                 }
-                changeDevice(SelectedDeviceDataID,deviceAtStoppointDataID,stoppointDataID,toWarehouseDataID,caseDataID,ses);
+                changeDevice(SelectedDeviceDataID,deviceAtStoppointDataID,stoppointDataID,toWarehouseDataID,caseDataID,util);
                 break;
                 
                 
@@ -134,7 +134,7 @@ public class Activities extends CodeunitFormevents{
                     setItemStatus(98);
                     break;
                 }
-                setupDeviceOnStoppoint(caseDataID,stoppointDataID,SelectedDeviceDataID,SetupBattery,selectedDeviceTwoDataID,ses);
+                setupDeviceOnStoppoint(caseDataID,stoppointDataID,SelectedDeviceDataID,SetupBattery,selectedDeviceTwoDataID,util);
                 break;
                 
                 
@@ -144,7 +144,7 @@ public class Activities extends CodeunitFormevents{
                     setItemStatus(98);
                     break;
                 }
-                removeDeviceFromStoppoint(deviceAtStoppointDataID,toWarehouseDataID,ses);
+                removeDeviceFromStoppoint(deviceAtStoppointDataID,toWarehouseDataID,util);
                 break;
                 
                 
@@ -170,11 +170,12 @@ public class Activities extends CodeunitFormevents{
                 
             //Component setup
             case "176":
-                if(inventoryComponentRecordDataID == 0 || componentDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
+                if(inventoryComponentRecordDataID == 0 || fromWarehouseDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
+                    setRedirectErrorMsg("Missing required fields");
                     setItemStatus(98);
                     break;
                 }
-                componentSetup(inventoryComponentRecordDataID,componentDataID,stoppointDataID,componentAmount,ses);
+                componentSetup(inventoryComponentRecordDataID,componentDataID,stoppointDataID,componentAmount,util);
                 break;
                 
                 
@@ -184,7 +185,7 @@ public class Activities extends CodeunitFormevents{
                     setItemStatus(98);
                     break;
                 }
-                componentTakedown(componentDataID,stoppointDataID,componentAmount,ses);
+                componentTakedown(componentDataID,stoppointDataID,componentAmount,util);
                 break;
             
             //Move component
@@ -193,7 +194,7 @@ public class Activities extends CodeunitFormevents{
                     setItemStatus(98);
                     break;
                 }
-                moveComponent(inventoryComponentRecordDataID,toWarehouseDataID,componentAmount,ses);
+                moveComponent(inventoryComponentRecordDataID,toWarehouseDataID,componentAmount,util);
                 break;
             
             //Move deviceCountdown
@@ -202,7 +203,7 @@ public class Activities extends CodeunitFormevents{
                     setItemStatus(98);
                     break;
                 }
-                moveDevice(SelectedDeviceDataID,toWarehouseDataID,ses);
+                moveDevice(SelectedDeviceDataID,toWarehouseDataID,util);
                 break;
                 
             default:
@@ -216,12 +217,12 @@ public class Activities extends CodeunitFormevents{
     
     
     
-    private void changeDevice(int SelectedDeviceDataID,int deviceAtStoppointDataID,int stoppointDataID, int toWarehouseDataID, int caseDataID, Session ses){
+    private void changeDevice(int SelectedDeviceDataID,int deviceAtStoppointDataID,int stoppointDataID, int toWarehouseDataID, int caseDataID, Util util){
         try{
-            SolutionRecord devInstallSR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
-            SolutionRecord devUninstallSR = Util.getSolutionRecord(deviceEntity, deviceAtStoppointDataID, ses);
-            SolutionRecord spSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
-            SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
+            SolutionRecord devInstallSR = util.getSolutionRecord(deviceEntity, SelectedDeviceDataID);
+            SolutionRecord devUninstallSR = util.getSolutionRecord(deviceEntity, deviceAtStoppointDataID);
+            SolutionRecord spSR = util.getSolutionRecord(stoppointEntity, stoppointDataID);
+            SolutionRecord warehouseSR = util.getSolutionRecord(warehouseEntity, toWarehouseDataID);
                     
             Device devInstall = new Device(devInstallSR);
             Device devUninstall = new Device(devUninstallSR);
@@ -233,7 +234,7 @@ public class Activities extends CodeunitFormevents{
             devInstall.setStoppoint(spSR);
             devUninstall.setStorage(warehouseSR);
                     
-            SolutionRecordNew setupActivityRecord = createSetupActivity(ses, caseDataID, spSR, devInstallSR);
+            SolutionRecordNew setupActivityRecord = util.createSetupActivity(caseDataID, spSR, devInstallSR);
             
             c.fields.getElementByFieldName(activityDevice).setFieldValue(deviceAtStoppointDataID);
             c.fields.getElementByFieldName(activityActivity).setFieldValue(172);
@@ -250,11 +251,11 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
-    private void setupDeviceOnStoppoint(int caseDataID, int stoppointDataID, int SelectedDeviceDataID, int SetupBattery, int SelectedDeviceTwoDataID, Session ses){
+    private void setupDeviceOnStoppoint(int caseDataID, int stoppointDataID, int SelectedDeviceDataID, int SetupBattery, int SelectedDeviceTwoDataID, Util util){
         try{
 
-            SolutionRecord spSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
-            SolutionRecord deviceCountdownSR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
+            SolutionRecord spSR = util.getSolutionRecord(stoppointEntity, stoppointDataID);
+            SolutionRecord deviceCountdownSR = util.getSolutionRecord(deviceEntity, SelectedDeviceDataID);
             Device deviceCountdown = new Device(deviceCountdownSR);
 
             if(!deviceCountdown.isCountdownModule()){
@@ -266,7 +267,7 @@ public class Activities extends CodeunitFormevents{
             
             Device deviceBattery = null;
             if(SetupBattery == 1){
-                SolutionRecord deviceBatterySR = Util.getSolutionRecord(deviceEntity, SelectedDeviceTwoDataID, ses);
+                SolutionRecord deviceBatterySR = util.getSolutionRecord(deviceEntity, SelectedDeviceTwoDataID);
                 deviceBattery = new Device(deviceBatterySR);
                 if(!deviceBattery.isBattery()){
                     setRedirectErrorMsg("Selected Device is not a Battery");
@@ -280,7 +281,7 @@ public class Activities extends CodeunitFormevents{
 
             c.fields.getElementByFieldName(activityDevice).setFieldValue(SelectedDeviceDataID);
             if(SetupBattery == 1){
-                SolutionRecordNew srn = createSetupBatteryActivity(ses,caseDataID , spSR, deviceCountdownSR);
+                SolutionRecordNew srn = util.createSetupBatteryActivity(caseDataID , spSR, deviceCountdownSR);
                 c.fields.getElementByFieldName(activitySetupBattery).setFieldValue(0);
                 c.fields.getElementByFieldName(activitySelectedDeviceTwo).setFieldValue("");
                 deviceBattery.persistChanges();
@@ -298,10 +299,10 @@ public class Activities extends CodeunitFormevents{
 
     }
     
-    private void removeDeviceFromStoppoint(int deviceAtStoppointDataID, int toWarehouseDataID, Session ses){
+    private void removeDeviceFromStoppoint(int deviceAtStoppointDataID, int toWarehouseDataID, Util util){
         try{
-            SolutionRecord deviceSR = Util.getSolutionRecord(deviceEntity, deviceAtStoppointDataID, ses);
-            SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
+            SolutionRecord deviceSR = util.getSolutionRecord(deviceEntity, deviceAtStoppointDataID);
+            SolutionRecord warehouseSR = util.getSolutionRecord(warehouseEntity, toWarehouseDataID);
 
             Device device = new Device(deviceSR);
             if(!device.isCountdownModule()){
@@ -333,37 +334,40 @@ public class Activities extends CodeunitFormevents{
         setItemStatus(100);
     }
     
-    private void componentSetup(int inventoryComponentRecordDataID, int componentDataID, int stoppointDataID,int componentAmount, Session ses){
+    private void componentSetup(int inventoryComponentRecordDataID, int componentDataID, int stoppointDataID,int componentAmount, Util util){
         try{
-            WarehouseComponentFunctions whf = new WarehouseComponentFunctions();
-            StoppointComponentFunctions spcf = new StoppointComponentFunctions();
+            StoppointComponent spcf = new StoppointComponent();
 
-            SolutionRecord warehouseStorageInvSR = Util.getSolutionRecord(componentStorageEntity, inventoryComponentRecordDataID, ses);
-            whf.removeComponentsFromInventory(warehouseStorageInvSR, componentAmount);
+            SolutionRecord warehouseComponentSR = util.getSolutionRecord(componentStorageEntity, inventoryComponentRecordDataID);
+            WarehouseComponent warehouseComponent = new WarehouseComponent(warehouseComponentSR);
 
-            componentDataID = warehouseStorageInvSR.getValueInteger(componentStorageComponent);
-            int spcDataID = spcf.findStoppointComponentDataID(componentDataID,stoppointDataID,ses);
+            warehouseComponent.removeComponentsFromInventory(componentAmount);
+
+            componentDataID = warehouseComponentSR.getValueInteger(componentStorageComponent);
+            int spcDataID = util.findStoppointComponentDataID(componentDataID,stoppointDataID);
 
             if(spcDataID == 0){
-                SolutionRecord stoppointSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
-                SolutionRecord componentSR = Util.getSolutionRecord(componentEntity, componentDataID, ses);
-                SolutionRecordNew srn = spcf.createStoppointInvComponentRecord(stoppointSR, componentSR, componentAmount, ses);
+                SolutionRecord stoppointSR = util.getSolutionRecord(stoppointEntity, stoppointDataID);
+                SolutionRecord componentSR = util.getSolutionRecord(componentEntity, componentDataID);
+                SolutionRecordNew srn = util.createStoppointInvComponentRecord(stoppointSR, componentSR, componentAmount);
                 srn.persistChanges();
-                warehouseStorageInvSR.persistChanges();
+                warehouseComponent.persistChanges();
             }
             else{
-                SolutionRecord sr = Util.getSolutionRecord(stoppointInvEntity, spcDataID, ses);
+                SolutionRecord sr = util.getSolutionRecord(stoppointInvEntity, spcDataID);
                 spcf.addStoppointInvComponent(sr, componentAmount);
                 sr.persistChanges();
-                warehouseStorageInvSR.persistChanges();
+                warehouseComponent.persistChanges();
             }
             setItemStatus(100);
 
         }
         catch(ValueException e){
+            setRedirectErrorMsg("Not enough items in inventory");
             setItemStatus(98);
         }
         catch(IllegalArgumentException e){
+            setRedirectErrorMsg("Invalid DataIDs");
             setItemStatus(98);
         }
         catch(Exception e){
@@ -371,15 +375,15 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
-    private void componentTakedown(int componentDataID, int stoppointDataID,int componentAmount, Session ses){
-        StoppointComponentFunctions spcf = new StoppointComponentFunctions();
-        int spcDataID = spcf.findStoppointComponentDataID(componentDataID,stoppointDataID,ses);
+    private void componentTakedown(int componentDataID, int stoppointDataID,int componentAmount, Util util){
+        StoppointComponent spcf = new StoppointComponent();
+        int spcDataID = util.findStoppointComponentDataID(componentDataID,stoppointDataID);
         if(spcDataID == 0){
             //Do nothing, we cant remove stuff that dont exist
             return;
         }
         try{
-            SolutionRecord spcSR = Util.getSolutionRecord(stoppointInvEntity, spcDataID, ses);
+            SolutionRecord spcSR = util.getSolutionRecord(stoppointInvEntity, spcDataID);
             spcf.removeStoppointInvComponent(spcSR,componentAmount);
             spcSR.persistChanges();
             setItemStatus(100);
@@ -395,31 +399,32 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
-    private void moveComponent(int inventoryComponentRecordDataID, int toWarehouseDataID, int componentAmount, Session ses){
+    private void moveComponent(int inventoryComponentRecordDataID, int toWarehouseDataID, int componentAmount, Util util){
         
         try{
-            WarehouseComponentFunctions whf = new WarehouseComponentFunctions();
 
-            SolutionRecord srFrom = Util.getSolutionRecord(componentStorageEntity, inventoryComponentRecordDataID, ses);
-            whf.removeComponentsFromInventory(srFrom,componentAmount);
+            SolutionRecord srFrom = util.getSolutionRecord(componentStorageEntity, inventoryComponentRecordDataID);
+            WarehouseComponent warehouseComponentFrom = new WarehouseComponent(srFrom);
+            warehouseComponentFrom.removeComponentsFromInventory(componentAmount);
             
             int inventoryComponentDataID = srFrom.getValueInteger(componentStorageComponent);
-            int toWarehouseInventoryComponentDataID = whf.findWarehouseComponentDataID(inventoryComponentDataID, toWarehouseDataID, ses);
+            int toWarehouseInventoryComponentDataID = util.findWarehouseComponentDataID(inventoryComponentDataID, toWarehouseDataID);
 
             //Record dosent exist, Create it
             if(toWarehouseInventoryComponentDataID == 0){
-                SolutionRecord warehouseToSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
-                SolutionRecord componentSR = Util.getSolutionRecord(componentEntity, inventoryComponentDataID, ses);
-                SolutionRecordNew srnTo = whf.createWarehouseInvComponentRecord(warehouseToSR, componentSR, componentAmount, ses);
-                srFrom.persistChanges();
+                SolutionRecord warehouseToSR = util.getSolutionRecord(warehouseEntity, toWarehouseDataID);
+                SolutionRecord componentSR = util.getSolutionRecord(componentEntity, inventoryComponentDataID);
+                SolutionRecordNew srnTo = util.createWarehouseInvComponentRecord(warehouseToSR, componentSR, componentAmount);
+                warehouseComponentFrom.persistChanges();
                 srnTo.persistChanges();
             }
             else{
                 //Update record
-                SolutionRecord srTo = Util.getSolutionRecord(componentStorageEntity, toWarehouseInventoryComponentDataID, ses);
-                whf.addInventoryComponent(srTo, componentAmount);
-                srFrom.persistChanges();
-                srTo.persistChanges();
+                SolutionRecord srTo = util.getSolutionRecord(componentStorageEntity, toWarehouseInventoryComponentDataID);
+                WarehouseComponent warehouseComponentTo = new WarehouseComponent(srTo);
+                warehouseComponentTo.addInventoryComponent(componentAmount);
+                warehouseComponentFrom.persistChanges();
+                warehouseComponentTo.persistChanges();
             }
             setItemStatus(100);
         }
@@ -436,10 +441,10 @@ public class Activities extends CodeunitFormevents{
         }
     }
 
-    private void moveDevice(int SelectedDeviceDataID, int toWarehouseDataID, Session ses){
+    private void moveDevice(int SelectedDeviceDataID, int toWarehouseDataID, Util util){
         try{
-            SolutionRecord deviceSR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
-            SolutionRecord warehouseSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
+            SolutionRecord deviceSR = util.getSolutionRecord(deviceEntity, SelectedDeviceDataID);
+            SolutionRecord warehouseSR = util.getSolutionRecord(warehouseEntity, toWarehouseDataID);
             Device device = new Device(deviceSR);
             if(device.isSetAtStoppoint()){
                 setItemStatus(98);
@@ -457,10 +462,10 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
-    private void setupBattery(int SelectedDeviceDataID, int stoppointDataID, Session ses){
+    private void setupBattery(int SelectedDeviceDataID, int stoppointDataID, Util util){
         try{
-            SolutionRecord batterySR = Util.getSolutionRecord(deviceEntity, SelectedDeviceDataID, ses);
-            SolutionRecord stoppointSR = Util.getSolutionRecord(stoppointEntity, stoppointDataID, ses);
+            SolutionRecord batterySR = util.getSolutionRecord(deviceEntity, SelectedDeviceDataID);
+            SolutionRecord stoppointSR = util.getSolutionRecord(stoppointEntity, stoppointDataID);
 
             Device battery = new Device(batterySR);
             if(!battery.isBattery()){
@@ -476,10 +481,10 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
-    private void removeBattery(int batteryOnStoppointDataID, int toWarehouseDataID, Session ses){
+    private void removeBattery(int batteryOnStoppointDataID, int toWarehouseDataID, Util util){
         try{
-            SolutionRecord batterySR = Util.getSolutionRecord(deviceEntity, batteryOnStoppointDataID, ses);
-            SolutionRecord storageSR = Util.getSolutionRecord(warehouseEntity, toWarehouseDataID, ses);
+            SolutionRecord batterySR = util.getSolutionRecord(deviceEntity, batteryOnStoppointDataID);
+            SolutionRecord storageSR = util.getSolutionRecord(warehouseEntity, toWarehouseDataID);
             
             Device battery = new Device(batterySR);
             if(!battery.isBattery()){
@@ -505,55 +510,7 @@ public class Activities extends CodeunitFormevents{
 
   
     
-    
-    
-    private SolutionRecordNew createSetupBatteryActivity(Session ses, int caseDataID, SolutionRecord stoppointSR,SolutionRecord deviceSR) throws Exception{
-        
 
-        if(stoppointSR.getInstanceID() != 0 && deviceSR.getInstanceID() != 0 ){
-            SolutionRecordNew srn = ses.getSolutionRecordNew(activityEntity);
-            if(caseDataID != 0){
-                SolutionRecord caseSR = Util.getSolutionRecord(caseEntity, caseDataID,ses);
-                srn.setReference(activityCase, caseSR);
-            }
-            srn.setReference(activityDevice, deviceSR);
-            srn.setReference(activitySelectedDevice, deviceSR);
-
-            srn.setReference(activityStoppoint, stoppointSR);
-            srn.setValueInteger(activityActivity, 168);
-            srn.setValueInteger("StatusID",100);
-            return srn;
-        }
-        else{
-            throw new IllegalArgumentException("Invalid DataIDs");
-        }
-    }
-
-    
-        
-    //This should be a general function in the future, for now its there
-    private SolutionRecordNew createSetupActivity(Session ses,int caseDataID, SolutionRecord stoppointSR,SolutionRecord deviceSR) throws Exception{
-        
-
-        if(stoppointSR.getInstanceID() != 0 && deviceSR.getInstanceID() != 0 ){
-            SolutionRecordNew srn = ses.getSolutionRecordNew(activityEntity);
-            if(caseDataID != 0){
-                SolutionRecord caseSR = Util.getSolutionRecord(caseEntity, caseDataID,ses);
-                srn.setReference(activityCase, caseSR);
-            }
-            srn.setReference(activityDevice, deviceSR);
-            srn.setReference(activitySelectedDevice, deviceSR);
-
-            srn.setReference(activityStoppoint, stoppointSR);
-            srn.setValueInteger(activityActivity, 171);
-            srn.setValueInteger("StatusID",100);
-            return srn;
-        }
-        else{
-            throw new IllegalArgumentException("Invalid DataIDs");
-        }
-        
-    }
     
     
     private void setDebugMessage(String s){
