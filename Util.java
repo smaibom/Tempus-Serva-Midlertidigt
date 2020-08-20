@@ -11,6 +11,8 @@ import dk.tempusserva.api.SolutionQuery;
 import dk.tempusserva.api.SolutionQueryResultSet;
 import dk.tempusserva.api.SolutionRecord;
 import dk.tempusserva.api.SolutionRecordNew;
+import java.util.HashMap;
+import java.util.Map;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
 /**
@@ -19,32 +21,7 @@ import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
  */
 public class Util {
     
-    private final String stoppointInvEntity = "stoppointinventory";
-    private final String stoppointInvStoppoint = "STOPPOINT";
-    private final String stoppointInvComponent = "COMPONENT";
-    private final String stoppointInvAmount = "AMOUNT";
-    private final String caseEntity = "workorder";
-    private final String componentStorageEntity = "warehouseallocation";
-    private final String componentStorageAmount = "AMOUNT";
-    private final String componentStorageWarehouse = "WAREHOUSE";
-    private final String componentStorageComponent = "COMPONENT";
-    private final String activityEntity = "activities";
-    private final String activityCase = "WORKORDER";
-    private final String activityStoppoint = "STOPPOINT";
-    private final String activityDevice = "DEVICE";
-    private final String activityActivity = "ACTIVITY";
-    private final String activityComponentInstalled = "COMPONETTYPEINSTALLED";
-    private final String activityComponentAmountInstalled = "COMPONETTYPEINSTALLEDAMOUNT";
-    private final String activitySelectedDevice = "SELECTEDDEVICE";
-    private final String activityDeviceOnStoppoint = "DEVICEONSTOPPOINT";
-    private final String activityToInventory = "TOINVENTORY";
-    private final String activityFromInventory = "FROMINVENTORY";
-    private final String activityInventoryComponent = "INVENTORYCOMPONENT";
-    private final String activityBatteryOnStoppoint = "BATTERYONSTOPPOINT";
-    private final String activitySupplier = "SUPPLIER";
-    private final String activitySelectedDeviceTwo = "SELECTEDDEVICE2";
-    private final String activitySetupBattery = "SETUPBATTERY";
-    
+
     private Session ses;
     
     public Util(Session session){
@@ -83,10 +60,11 @@ public class Util {
             throw new IllegalArgumentException("Invalid DataIDs");
         }
 
-        SolutionRecordNew srn = ses.getSolutionRecordNew(stoppointInvEntity);
-        srn.setReference(stoppointInvStoppoint, stoppointSR);
-        srn.setReference(stoppointInvComponent, componentSR);
-        srn.setValueInteger(stoppointInvAmount, componentAmount);
+        
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.STOPPOINTINV_ENTITY);
+        srn.setReference(TSValues.STOPPOINTINV_STOPPOINT, stoppointSR);
+        srn.setReference(TSValues.STOPPOINTINV_COMPONENT, componentSR);
+        srn.setValueInteger(TSValues.STOPPOINTINV_AMOUNT, componentAmount);
         return srn;
     }
     
@@ -98,9 +76,9 @@ public class Util {
      * @return int value higher than 0 if a record is found, 0 otherwise
      */
     public int findStoppointComponentDataID(int componentDataID,int stoppointDataID){
-        SolutionQuery q = ses.getSolutionQuery(stoppointInvEntity);
-        q.addWhereCriterion(stoppointInvStoppoint, QueryPart.EQUALS, String.valueOf(stoppointDataID));
-        q.addWhereCriterion(stoppointInvComponent, QueryPart.EQUALS, String.valueOf(componentDataID));
+        SolutionQuery q = ses.getSolutionQuery(TSValues.STOPPOINTINV_ENTITY);
+        q.addWhereCriterion(TSValues.STOPPOINTINV_STOPPOINT, QueryPart.EQUALS, String.valueOf(stoppointDataID));
+        q.addWhereCriterion(TSValues.STOPPOINTINV_COMPONENT, QueryPart.EQUALS, String.valueOf(componentDataID));
         SolutionQueryResultSet rs = q.executeQuery();
         if(rs.size() == 1){
             return rs.getRecord(0).getInstanceID();
@@ -126,10 +104,10 @@ public class Util {
             throw new IllegalArgumentException("Invalid DataIDs");
         }
 
-        SolutionRecordNew srn = ses.getSolutionRecordNew(componentStorageEntity);
-        srn.setReference(componentStorageWarehouse, warehouseSR);
-        srn.setReference(componentStorageComponent, componentSR);
-        srn.setValueInteger(componentStorageAmount, componentAmount);
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.COMPONENTSTORAGE_ENTITY);
+        srn.setReference(TSValues.COMPONENTSTORAGE_WAREHOUSE, warehouseSR);
+        srn.setReference(TSValues.COMPONENTSTORAGE_COMPONENT, componentSR);
+        srn.setValueInteger(TSValues.COMPONENTSTORAGE_AMOUNT, componentAmount);
         return srn;
     }
     
@@ -141,9 +119,9 @@ public class Util {
      * @return int value higher than 0 if a record is found, 0 otherwise
      */
     public int findWarehouseComponentDataID(int componentDataID,int warehouseDataID){
-        SolutionQuery q = ses.getSolutionQuery(componentStorageEntity);
-        q.addWhereCriterion(componentStorageWarehouse, QueryPart.EQUALS, String.valueOf(warehouseDataID));
-        q.addWhereCriterion(componentStorageComponent, QueryPart.EQUALS, String.valueOf(componentDataID));
+        SolutionQuery q = ses.getSolutionQuery(TSValues.COMPONENTSTORAGE_ENTITY);
+        q.addWhereCriterion(TSValues.COMPONENTSTORAGE_WAREHOUSE, QueryPart.EQUALS, String.valueOf(warehouseDataID));
+        q.addWhereCriterion(TSValues.COMPONENTSTORAGE_COMPONENT, QueryPart.EQUALS, String.valueOf(componentDataID));
         SolutionQueryResultSet rs = q.executeQuery();
         if(rs.size() == 1){
             return rs.getRecord(0).getInstanceID();
@@ -156,18 +134,17 @@ public class Util {
     
     public SolutionRecordNew createSetupBatteryActivity(int caseDataID, SolutionRecord stoppointSR,SolutionRecord deviceSR) throws Exception{
         
-
+        
         if(stoppointSR.getInstanceID() != 0 && deviceSR.getInstanceID() != 0 ){
-            SolutionRecordNew srn = ses.getSolutionRecordNew(activityEntity);
+            SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
             if(caseDataID != 0){
-                SolutionRecord caseSR = getSolutionRecord(caseEntity, caseDataID);
-                srn.setReference(activityCase, caseSR);
+                SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+                srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
             }
-            srn.setReference(activityDevice, deviceSR);
-            srn.setReference(activitySelectedDevice, deviceSR);
-
-            srn.setReference(activityStoppoint, stoppointSR);
-            srn.setValueInteger(activityActivity, 168);
+            srn.setReference(TSValues.ACTIVITY_DEVICE, deviceSR);
+            srn.setReference(TSValues.ACTIVITY_SELECTEDDEVICE, deviceSR);
+            srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
+            srn.setValueInteger(TSValues.ACTIVITY_ACTIVITY, 168);
             srn.setValueInteger("StatusID",100);
             return srn;
         }
@@ -175,7 +152,7 @@ public class Util {
             throw new IllegalArgumentException("Invalid DataIDs");
         }
     }
-
+   
     
         
     //This should be a general function in the future, for now its there
@@ -183,16 +160,16 @@ public class Util {
         
 
         if(stoppointSR.getInstanceID() != 0 && deviceSR.getInstanceID() != 0 ){
-            SolutionRecordNew srn = ses.getSolutionRecordNew(activityEntity);
+            SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
             if(caseDataID != 0){
-                SolutionRecord caseSR = getSolutionRecord(caseEntity, caseDataID);
-                srn.setReference(activityCase, caseSR);
+                SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+                srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
             }
-            srn.setReference(activityDevice, deviceSR);
-            srn.setReference(activitySelectedDevice, deviceSR);
+            srn.setReference(TSValues.ACTIVITY_DEVICE, deviceSR);
+            srn.setReference(TSValues.ACTIVITY_SELECTEDDEVICE, deviceSR);
 
-            srn.setReference(activityStoppoint, stoppointSR);
-            srn.setValueInteger(activityActivity, 171);
+            srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
+            srn.setValueInteger(TSValues.ACTIVITY_ACTIVITY, 171);
             srn.setValueInteger("StatusID",100);
             return srn;
         }
@@ -202,5 +179,27 @@ public class Util {
         
     }
     
+    
+    public SolutionRecordNew createActivityRecord(int caseDataID, HashMap<String,SolutionRecord> records, int activityID, int statusID) throws Exception{
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
+        if(caseDataID != 0){
+                SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+                srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
+                
+        }
+        
+        for (Map.Entry<String, SolutionRecord> entry : records.entrySet()) {
+            String key = entry.getKey();
+            SolutionRecord value = entry.getValue();
+            if(value.getInstanceID() == 0){
+                throw new IllegalArgumentException("Invalid DataIDs");
+            }
+            srn.setReference(key, value);
+        }
+        srn.setValueInteger(TSValues.ACTIVITY_ACTIVITY, activityID);
+        srn.setValueInteger("StatusID",statusID);
+        
+        return srn;
+    }
     
 }

@@ -14,59 +14,56 @@ import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
  */
 public class StoppointComponent {
  
-    
-    private final String stoppointInvEntity = "stoppointinventory";
-    private final String stoppointInvStoppoint = "STOPPOINT";
-    private final String stoppointInvComponent = "COMPONENT";
-    private final String stoppointInvAmount = "AMOUNT";
-    
 
+    private SolutionRecord sr;
+
+    
+    public StoppointComponent(SolutionRecord StoppointComponentSR){
+        if(StoppointComponentSR.getInstanceID() == 0){
+            throw new IllegalArgumentException("Invalid DataIDs");
+        }
+        sr = StoppointComponentSR;
+    }
     
     /**
      * Adds a given amount of components to a specific stoppoint inventory record, 
      * Does not persist any data
-     * @param stoppointComponentInvSR SolutionRecord of the specific stoppoint component inventory being updated
      * @param componentAmount int value with the amount of components being added
      * @throws IllegalArgumentException on invalid DataID
      * @throws Exception on system error
      */
-    public void addStoppointInvComponent(SolutionRecord stoppointComponentInvSR, int componentAmount) throws Exception{
-        
-        if(stoppointComponentInvSR.getInstanceID() == 0){
-            throw new IllegalArgumentException("Invalid DataIDs");
-        }
-        
-        int newAmount = stoppointComponentInvSR.getValueInteger(stoppointInvAmount) + componentAmount;
-        stoppointComponentInvSR.setValueInteger(stoppointInvAmount, newAmount);
-
+    public void addStoppointInvComponent(int componentAmount) throws Exception{
+        int newAmount = sr.getValueInteger(TSValues.STOPPOINTINV_AMOUNT) + componentAmount;
+        sr.setValueInteger(TSValues.STOPPOINTINV_AMOUNT, newAmount);
     }
     
     
     /**
      * Removes a given amount of components to a specific stoppoint inventory record
      * Does not persist any data
-     * @param stoppointComponentInvSR SolutionRecord of the specific stoppoint component inventory being updated    
      * @param componentAmount int value with the amount of components being removed
      * @throws IllegalArgumentException on invalid DataID
      * @throws ValueException If the amount of components is higher than what is in the inventory
      * @throws Exception on system error
      */
-    public void removeStoppointInvComponent(SolutionRecord stoppointComponentInvSR, int componentAmount) throws Exception{
-        
-        if(stoppointComponentInvSR.getInstanceID() == 0){
-            throw new IllegalArgumentException("Invalid DataIDs");
-        }
-        
-        int newAmount = stoppointComponentInvSR.getValueInteger(stoppointInvAmount) - componentAmount;
+    public void removeStoppointInvComponent(int componentAmount) throws Exception{
+        int newAmount = sr.getValueInteger(TSValues.STOPPOINTINV_AMOUNT) - componentAmount;
         if(newAmount < 0){
             throw new ValueException("Extracted more items than was in storage");
         }
-        stoppointComponentInvSR.setValueInteger(stoppointInvAmount, newAmount);
+        sr.setValueInteger(TSValues.STOPPOINTINV_AMOUNT, newAmount);
 
     }
 
     
     
+    /**
+     * Persist changes of the stoppoint component record
+     * @throws Exception On system error
+     */
+    public void persistChanges() throws Exception{
+        sr.persistChanges();
+    }
     
     
     

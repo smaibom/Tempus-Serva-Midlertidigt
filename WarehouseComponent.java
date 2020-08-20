@@ -13,13 +13,7 @@ import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
  * @author XSMA
  */
 public class WarehouseComponent {
-    
-    
-    private final String componentStorageEntity = "warehouseallocation";
-    private final String componentStorageAmount = "AMOUNT";
-    private final String componentStorageWarehouse = "WAREHOUSE";
-    private final String componentStorageComponent = "COMPONENT";
-    
+
     private SolutionRecord sr;
     
     public WarehouseComponent(SolutionRecord warehouseCompSR){
@@ -30,6 +24,14 @@ public class WarehouseComponent {
     }
     
     
+    /**
+     * Gets the amount of units in inventory
+     * @return Int value with amount in inventory
+     * @throws Exception On system error
+     */
+    public int getInventoryAmount() throws Exception{
+        return sr.getValueInteger(TSValues.COMPONENTSTORAGE_AMOUNT);
+    }
     
     /**
      * Adds a given amount of components to a given component storage  record, 
@@ -39,8 +41,8 @@ public class WarehouseComponent {
      * @throws Exception on system error
      */
     public void addInventoryComponent(int componentAmount) throws Exception{
-        int newAmount = sr.getValueInteger(componentStorageAmount) + componentAmount;
-        sr.setValueInteger(componentStorageAmount, newAmount);
+        int newAmount = sr.getValueInteger(TSValues.COMPONENTSTORAGE_AMOUNT) + componentAmount;
+        sr.setValueInteger(TSValues.COMPONENTSTORAGE_AMOUNT, newAmount);
     }
     
     
@@ -53,15 +55,23 @@ public class WarehouseComponent {
      * @throws Exception on system error
      */
     public void removeComponentsFromInventory(int componentAmount) throws Exception{
-        
-       
-        int newAmount = sr.getValueInteger(componentStorageAmount) - componentAmount;
+        int newAmount = sr.getValueInteger(TSValues.COMPONENTSTORAGE_AMOUNT) - componentAmount;
         if(newAmount < 0){
             throw new ValueException("Extracted more items than was in storage");
         }
-        sr.setValueInteger(componentStorageAmount, newAmount);
-
+        sr.setValueInteger(TSValues.COMPONENTSTORAGE_AMOUNT, newAmount);
     }
+    
+    /**
+     * Gets the DataID of the component type the record holds
+     * @return Int value with the DataID of the component Type
+     * @throws Exception On System error
+     */
+    public int getComponentDataID() throws Exception{
+        return sr.getValueInteger(TSValues.COMPONENTSTORAGE_COMPONENT);
+    }
+    
+    
     
     /**
      * Persist changes of the warehouse component record
