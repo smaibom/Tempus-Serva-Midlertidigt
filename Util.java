@@ -202,4 +202,23 @@ public class Util {
         return srn;
     }
     
+    
+    
+    public SolutionRecordNew createComponentSetupActivity(int caseDataID, SolutionRecord stoppointSR, int fromWarehouseDataID, int warehouseComponentDataID, int amount) throws Exception{
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
+        if(caseDataID != 0){
+            SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+            srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
+        }
+        srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
+        srn.setValueInteger(TSValues.ACTIVITY_FROMINVENTORY, fromWarehouseDataID);
+        srn.setValueInteger(TSValues.ACTIVITY_INVENTORYCOMPONENT, warehouseComponentDataID);
+        srn.setValueInteger(TSValues.ACTIVITY_COMPONENTAMOUNTINSTALLED, amount);
+        srn.setValueInteger(TSValues.ACTIVITY_ACTIVITY, 176);
+        srn.setValueInteger("StatusID",100);
+        return srn;
+
+        
+    }
+    
 }

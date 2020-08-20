@@ -145,7 +145,7 @@ public class Activities extends CodeunitFormevents{
                 }
                 //TODO: REMOVE MEEEEE
                 int defaultStorageDataID = 161;
-                componentSetup(defaultStorageDataID,inventoryComponentRecordDataID,componentDataID,stoppointDataID,componentAmount,util);
+                componentSetup(caseDataID,defaultStorageDataID,inventoryComponentRecordDataID,componentDataID,stoppointDataID,componentAmount,util);
                 break;
                 
                 
@@ -248,11 +248,8 @@ public class Activities extends CodeunitFormevents{
                     return;
                 }
                 deviceBattery.setStoppoint(spSR);
-                HashMap<String,SolutionRecord> records = new HashMap();
-                records.put(TSValues.ACTIVITY_DEVICE, deviceBatterySR);
-                records.put(TSValues.ACTIVITY_SELECTEDDEVICE, deviceBatterySR);
-                records.put(TSValues.ACTIVITY_STOPPOINT, spSR);
-                SolutionRecordNew srn = util.createActivityRecord(caseDataID, records, 168, 100);
+                
+                SolutionRecordNew srn = util.createSetupBatteryActivity(caseDataID, spSR, deviceBatterySR);
                 c.fields.getElementByFieldName(TSValues.ACTIVITY_SETUPBATTERY).setFieldValue(0);
                 c.fields.getElementByFieldName(TSValues.ACTIVITY_SELECTEDDEVICETWO).setFieldValue("");
                 deviceBattery.persistChanges();
@@ -305,13 +302,14 @@ public class Activities extends CodeunitFormevents{
         setItemStatus(100);
     }
     
-    private void componentSetup(int defaultStorage, int inventoryComponentRecordDataID, int componentDataID,int stoppointDataID,int componentAmount, Util util){
+    private void componentSetup(int caseDataID, int defaultStorage, int inventoryComponentRecordDataID, int componentDataID,int stoppointDataID,int componentAmount, Util util){
         try{
             
             //Get record of inventory for specific warehouse
             SolutionRecord warehouseComponentSR = util.getSolutionRecord(TSValues.COMPONENTSTORAGE_ENTITY, inventoryComponentRecordDataID);
             WarehouseComponent warehouseComponent = new WarehouseComponent(warehouseComponentSR);
             WarehouseComponent defaultWarehouseComponent = null;
+            SolutionRecordNew defaultWarehouseActivity = null;
             componentDataID = warehouseComponent.getComponentDataID();
             int availableComponents = warehouseComponent.getInventoryAmount();
             
@@ -333,15 +331,23 @@ public class Activities extends CodeunitFormevents{
                 //If a user attempts to take from a storage with 0 in inventory we do not create a record, just change the existing one 
                 //to be an record from the defaul storage instead
                 if(availableComponents == 0){
-                    setRedirectErrorMsg("Did i get to this point");
                     warehouseComponent = new WarehouseComponent(defaultComponentStorageSR);
                     warehouseComponent.removeComponentsFromInventory(componentAmount);
                     
                     c.fields.getElementByFieldName(TSValues.ACTIVITY_FROMINVENTORY).setFieldValue(defaultStorage);
                     c.fields.getElementByFieldName(TSValues.ACTIVITY_INVENTORYCOMPONENT).setFieldValue(defaultComponentStorageDataID);
                 }
+                //Substract from current selected and the main warehouse
                 else{
+                    int defaultWarehouseComponentAmount = componentAmount - availableComponents;
+                    defaultWarehouseComponent = new WarehouseComponent(defaultComponentStorageSR);
+                    c.fields.getElementByFieldName(TSValues.ACTIVITY_COMPONENTAMOUNTINSTALLED).setFieldValue(availableComponents);
                     
+                    SolutionRecord spSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
+                    defaultWarehouseActivity = util.createComponentSetupActivity(caseDataID, spSR, defaultStorage, defaultComponentStorageDataID, defaultWarehouseComponentAmount);
+                    
+                    warehouseComponent.removeComponentsFromInventory(availableComponents);
+                    defaultWarehouseComponent.removeComponentsFromInventory(defaultWarehouseComponentAmount);
                 }
                 
             }
@@ -363,8 +369,9 @@ public class Activities extends CodeunitFormevents{
                 stoppointComponent.persistChanges();
             }
             warehouseComponent.persistChanges();
-            if(true){
-                
+            if(defaultWarehouseActivity != null && defaultWarehouseComponent != null){
+                defaultWarehouseActivity.persistChanges();
+                defaultWarehouseComponent.persistChanges();
             }
                       
  
