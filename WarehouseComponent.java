@@ -72,6 +72,10 @@ public class WarehouseComponent {
     }
     
     
+    public int getWarehouseDataID() throws Exception{
+        return sr.getValueInteger(TSValues.COMPONENTSTORAGE_WAREHOUSE);
+    }
+    
     
     /**
      * Persist changes of the warehouse component record

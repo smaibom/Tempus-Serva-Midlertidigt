@@ -60,7 +60,7 @@ public class TSValues {
     public static final String ACTIVITY_DEVICE = "DEVICE";
     public static final String ACTIVITY_ACTIVITY = "ACTIVITY";
     public static final String ACTIVITY_COMPONENTINSTALLED = "COMPONETTYPEINSTALLED";
-    public static final String ACTIVITY_COMPONENTAMOUNTINSTALLED = "COMPONETTYPEINSTALLEDAMOUNT";
+    public static final String ACTIVITY_COMPONENTAMOUNT = "COMPONETTYPEINSTALLEDAMOUNT";
     public static final String ACTIVITY_SELECTEDDEVICE = "SELECTEDDEVICE";
     public static final String ACTIVITY_DEVICEONSTOPPOINT = "DEVICEONSTOPPOINT";
     public static final String ACTIVITY_TOINVENTORY = "TOINVENTORY";
@@ -71,15 +71,7 @@ public class TSValues {
     public static final String ACTIVITY_SELECTEDDEVICETWO = "SELECTEDDEVICE2";
     public static final String ACTIVITY_SETUPBATTERY = "SETUPBATTERY";
     
-    
-    
-    
-    
-    
-    
-    
     //public static final String batteryDef = "Batteri";
-    
     //public static final String countdownModuleDef = "Countdown";
     
     
