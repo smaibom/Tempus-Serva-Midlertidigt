@@ -15,7 +15,7 @@ public class Device {
     
 
     private final String batteryDef = "Batteri";
-    private final String countdownModuleDef = "Countdown";
+    private final String countdownModuleDef = "Modul";
     
     
     
