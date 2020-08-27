@@ -11,8 +11,6 @@ import dk.tempusserva.api.Session;
 import dk.tempusserva.api.SessionFactory;
 import dk.tempusserva.api.SolutionRecord;
 import dk.tempusserva.api.SolutionRecordNew;
-import java.util.HashMap;
-import java.util.Set;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
 /**
@@ -24,9 +22,7 @@ import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
  */
 public class Activities extends CodeunitFormevents{
     
-       
-    private final int statusIDinit = 83;
-    private final int statusIDuserError = 98;
+
     
 
     
@@ -45,110 +41,88 @@ public class Activities extends CodeunitFormevents{
 
     @Override
     public void beforeUpdateItem() throws Exception{
-        String typeField = c.fields.getElementByFieldName(TSValues.ACTIVITY_ACTIVITY).FieldValue;
-        int SelectedDeviceDataID =  Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_SELECTEDDEVICE).FieldValue);
-        int deviceAtStoppointDataID = Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_DEVICEONSTOPPOINT).FieldValue);
+        int statusID = getIntFieldValue(TSValues.STATUSID);
 
-        int stoppointDataID = Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_STOPPOINT).FieldValue);
-        int toWarehouseDataID = Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_TOINVENTORY).FieldValue);
-        int fromWarehouseDataID = Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_FROMINVENTORY).FieldValue);
-        int caseDataID = Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_CASE).FieldValue);
-        int componentDataID = Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_COMPONENTINSTALLED).FieldValue);
-        int inventoryComponentRecordDataID = Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_INVENTORYCOMPONENT).FieldValue);
-        int componentAmount = Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_COMPONENTAMOUNT).FieldValue);
-        int batteryOnStoppointDataID = Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_BATTERYONSTOPPOINT).FieldValue);
-        //int supplierDataID = Parser.getInteger(c.fields.getElementByFieldName(activitySupplier).FieldValue);
-        int statusID = Parser.getInteger(c.fields.getElementByFieldName("StatusID").FieldValue);
-        int selectedDeviceTwoDataID = Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_SELECTEDDEVICETWO).FieldValue);
-        int setupBattery = Parser.getInteger(c.fields.getElementByFieldName(TSValues.ACTIVITY_SETUPBATTERY).FieldValue);
-        int setupModule = Parser.getInteger(c.fields.getElementByFieldName("SETUPMODULE").FieldValue);
-         
-
-        if(!(statusID == statusIDinit || statusID == statusIDuserError || statusID == 103)){
+        if(!(statusID == TSValues.ACTIVITIES_STATUS_INIT || statusID == TSValues.ACTIVITIES_STATUS_USERERROR || statusID == TSValues.ACTIVITIES_STATUS_AWAITADMIN)){
             return;
         }
+        
+        
+        String typeField = getStringFieldValue(TSValues.ACTIVITY_ACTIVITY);
+        int SelectedDeviceDataID =  getIntFieldValue(TSValues.ACTIVITY_SELECTEDDEVICE);
+        int deviceAtStoppointDataID = getIntFieldValue(TSValues.ACTIVITY_DEVICEONSTOPPOINT);
+
+        int stoppointDataID = getIntFieldValue(TSValues.ACTIVITY_STOPPOINT);
+        int toWarehouseDataID = getIntFieldValue(TSValues.ACTIVITY_TOINVENTORY);
+        int fromWarehouseDataID = getIntFieldValue(TSValues.ACTIVITY_FROMINVENTORY);
+        int caseDataID = getIntFieldValue(TSValues.ACTIVITY_CASE);
+        int componentDataID = getIntFieldValue(TSValues.ACTIVITY_COMPONENTINSTALLED);
+        int inventoryComponentRecordDataID = getIntFieldValue(TSValues.ACTIVITY_INVENTORYCOMPONENT);
+        int componentAmount = getIntFieldValue(TSValues.ACTIVITY_COMPONENTAMOUNT);
+        int batteryOnStoppointDataID = getIntFieldValue(TSValues.ACTIVITY_BATTERYONSTOPPOINT);
+        int selectedDeviceTwoDataID = getIntFieldValue(TSValues.ACTIVITY_SELECTEDDEVICETWO);
+        int setupBattery = getIntFieldValue(TSValues.ACTIVITY_SETUPBATTERY);
+        int setupModule = getIntFieldValue(TSValues.ACTIVITY_SETUPMODULE);
+         
+
+
         
  
         Session ses = SessionFactory.getSession(this);
         Util util = new Util(ses);
         
         switch(typeField){
-            //Setup battery
-            case "168":
+            case TSValues.ACTIVITIYCODE_BATTERY_SETUP:
                 if(stoppointDataID == 0 || selectedDeviceTwoDataID == 0 ){
-                        setItemStatus(98);
+                        setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                         break;
                 }
                 setupBattery(selectedDeviceTwoDataID,stoppointDataID,util);
                 break;
                 
-            //Remove Battery from stoppoint
-            case "169":
+            case TSValues.ACTIVITIYCODE_BATTERY_TAKEDOWN:
                 if(stoppointDataID == 0 || batteryOnStoppointDataID == 0 || toWarehouseDataID == 0){
-                    setRedirectErrorMsg("Incorrect fields given");
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     break;
                 }
                 removeBattery(batteryOnStoppointDataID,toWarehouseDataID,util);
                 break;
                 
-            //Change deviceCountdown
-            case "170":
-                if(SelectedDeviceDataID == 0 || deviceAtStoppointDataID == 0 || stoppointDataID == 0 || toWarehouseDataID == 0 || SelectedDeviceDataID == deviceAtStoppointDataID){
-                    setRedirectErrorMsg("Missing fields");
-                    setItemStatus(98);
-                    break;
-                }
-                changeDevice(SelectedDeviceDataID,deviceAtStoppointDataID,stoppointDataID,toWarehouseDataID,caseDataID,util);
-                break;
-                
-                
-            //Setup deviceCountdown at stoppoint
-            case "171":
+            case TSValues.ACTIVITIYCODE_DEVICE_SETUP:
                 if(stoppointDataID == 0 || SelectedDeviceDataID == 0 || (setupBattery == 1 && selectedDeviceTwoDataID == 0)){
-                    setRedirectErrorMsg("Missing required fields");
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     break;
                 }
                 setupDeviceOnStoppoint(caseDataID,stoppointDataID,SelectedDeviceDataID,setupBattery,selectedDeviceTwoDataID,util);
                 break;
                 
-                
-            //Remove deviceCountdown from stoppoint
-            case "172":
+            case TSValues.ACTIVITIYCODE_DEVICE_TAKEDOWN:
                 if(stoppointDataID == 0 || deviceAtStoppointDataID == 0 || toWarehouseDataID == 0){
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     break;
                 }
                 removeDeviceFromStoppoint(caseDataID,stoppointDataID,deviceAtStoppointDataID,toWarehouseDataID,setupModule, SelectedDeviceDataID,util);
                 break;
                 
-                
-            //Restart deviceCountdown
-            case "174":
+            case TSValues.ACTIVITIYCODE_DEVICE_RESTART:
                 if(stoppointDataID == 0 || deviceAtStoppointDataID == 0){
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     break;
                 }
                 restartDevice(deviceAtStoppointDataID);
                 break;
                 
-                
-            //Cablecheck
-            case "175":
+            case TSValues.ACTIVITIYCODE_DEVICE_CABLECHECK:
                 if(stoppointDataID == 0 || deviceAtStoppointDataID == 0){
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                         break;
                 }
                 cableCheck(deviceAtStoppointDataID);
                 break;
                 
-                
-            //Component setup
-            case "176":
+            case TSValues.ACTIVITIYCODE_COMPONENT_SETUP:
                 if(inventoryComponentRecordDataID == 0 || fromWarehouseDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
-                    setRedirectErrorMsg("Missing required fields");
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     break;
                 }
                 //TODO: REMOVE MEEEEE
@@ -157,28 +131,25 @@ public class Activities extends CodeunitFormevents{
                 break;
                 
                 
-            //Component takedown
-            case "177":
+            case TSValues.ACTIVITIYCODE_COMPONENT_TAKEDOWN:
                 if(componentDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     break;
                 }
                 componentTakedown(componentDataID,stoppointDataID,componentAmount,util);
                 break;
             
-            //Move component
-            case "178":
+            case TSValues.ACTIVITIYCODE_STORAGEMOVE_COMPONENT:
                 if(toWarehouseDataID == 0 || inventoryComponentRecordDataID == 0 || componentAmount < 1){
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     break;
                 }
                 moveComponent(inventoryComponentRecordDataID,toWarehouseDataID,componentAmount,util);
                 break;
             
-            //Move deviceCountdown
-            case "179":
+            case TSValues.ACTIVITIYCODE_STORAGEMOVE_DEVICE:
                 if(SelectedDeviceDataID == 0 || toWarehouseDataID == 0){
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     break;
                 }
                 moveDevice(SelectedDeviceDataID,toWarehouseDataID,util);
@@ -193,44 +164,6 @@ public class Activities extends CodeunitFormevents{
     }
     
     
-    
-    private void changeDevice(int SelectedDeviceDataID,int deviceAtStoppointDataID,int stoppointDataID, int toWarehouseDataID, int caseDataID, Util util){
-        try{
-            
-            SolutionRecord devInstallSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, SelectedDeviceDataID);
-            SolutionRecord devUninstallSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, deviceAtStoppointDataID);
-            SolutionRecord spSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
-            SolutionRecord warehouseSR = util.getSolutionRecord(TSValues.WAREHOUSE_ENTITY, toWarehouseDataID);
-                    
-            Device devInstall = new Device(devInstallSR);
-            Device devUninstall = new Device(devUninstallSR);
-            
-            if(!(devInstall.isCountdownModule() && devUninstall.isCountdownModule())){
-                setRedirectErrorMsg("Devices are not countdown modules");
-                setItemStatus(98);
-                return;
-            }
-            devInstall.setStoppoint(spSR);
-            devUninstall.setStorage(warehouseSR);
-                    
-            SolutionRecordNew setupActivityRecord = util.createSetupActivity(caseDataID, spSR, devInstallSR);
-            
-            c.fields.getElementByFieldName(TSValues.ACTIVITY_DEVICE).setFieldValue(deviceAtStoppointDataID);
-            c.fields.getElementByFieldName(TSValues.ACTIVITY_ACTIVITY).setFieldValue(172);
-            devInstall.persistChanges();
-            devUninstall.persistChanges();
-            setupActivityRecord.persistChanges(false);
-            setItemStatus(100);
-        }
-        catch(IllegalArgumentException e){
-            setRedirectErrorMsg("Illegal argument");
-            setItemStatus(98);
-        }
-        catch(Exception e){
-            setItemStatus(101);
-        }
-    }
-    
     private void setupDeviceOnStoppoint(int caseDataID, int stoppointDataID, int SelectedDeviceDataID, int SetupBattery, int SelectedDeviceTwoDataID, Util util){
         try{
             
@@ -240,38 +173,39 @@ public class Activities extends CodeunitFormevents{
 
             if(!deviceCountdown.isCountdownModule()){
                 setRedirectErrorMsg("Selected Device is not a countdown module");
-                setItemStatus(98);
+                setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
             
             deviceCountdown.setStoppoint(spSR);
             
-            c.fields.getElementByFieldName(TSValues.ACTIVITY_DEVICE).setFieldValue(SelectedDeviceDataID);
+            setIntFieldValue(TSValues.ACTIVITY_DEVICE, SelectedDeviceDataID);
+            
             if(SetupBattery == 1){
                 SolutionRecord deviceBatterySR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, SelectedDeviceTwoDataID);
                 Device deviceBattery = new Device(deviceBatterySR);
 
                 if(!deviceBattery.isBattery()){
                     setRedirectErrorMsg("Selected Device is not a Battery");
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     return;
                 }
                 deviceBattery.setStoppoint(spSR);
                 
                 SolutionRecordNew srn = util.createSetupBatteryActivity(caseDataID, spSR, deviceBatterySR);
-                c.fields.getElementByFieldName(TSValues.ACTIVITY_SETUPBATTERY).setFieldValue(0);
-                c.fields.getElementByFieldName(TSValues.ACTIVITY_SELECTEDDEVICETWO).setFieldValue("");
+                setIntFieldValue(TSValues.ACTIVITY_SETUPBATTERY, 0);
+                setStringFieldValue(TSValues.ACTIVITY_SELECTEDDEVICETWO, "");
                 deviceBattery.persistChanges();
                 srn.persistChanges(false);
             }
             deviceCountdown.persistChanges();
-            setItemStatus(100);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
         }
         catch(IllegalArgumentException e){
-            setItemStatus(98);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
         catch(Exception e){
-            setItemStatus(101);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
         }
 
     }
@@ -283,20 +217,20 @@ public class Activities extends CodeunitFormevents{
 
             Device device = new Device(deviceSR);
             if(!device.isCountdownModule()){
-                setItemStatus(98);
+                setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
             device.setStorage(warehouseSR);
-            c.fields.getElementByFieldName(TSValues.ACTIVITY_DEVICE).setFieldValue(deviceAtStoppointDataID);
             if(setupModule == 1 && moduleDataID != 0){
                 SolutionRecord setupModuleSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, moduleDataID);
                 Device setupDevice = new Device(setupModuleSR);
                 if(!setupDevice.isCountdownModule()){
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     return;
                 }
-                c.fields.getElementByFieldName("SETUPMODULE").setFieldValue(0);
-                c.fields.getElementByFieldName(TSValues.ACTIVITY_SELECTEDDEVICE).setFieldValue("");
+                
+                setIntFieldValue(TSValues.ACTIVITY_SETUPMODULE, 0);
+                setStringFieldValue(TSValues.ACTIVITY_SELECTEDDEVICE, "");
                 
                 SolutionRecord stoppointSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
 
@@ -307,27 +241,29 @@ public class Activities extends CodeunitFormevents{
                 setupActivity.persistChanges(false);
                 setupDevice.persistChanges();
             }
+            setIntFieldValue(TSValues.ACTIVITY_DEVICE, deviceAtStoppointDataID);
             
             device.persistChanges();
-            setItemStatus(100);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
 
         }
         catch(IllegalArgumentException e){
-            setItemStatus(98);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
         catch(Exception e){
-            setItemStatus(101);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
         }
     }
     
     private void restartDevice(int deviceAtStoppointDataID){
         c.fields.getElementByFieldName(TSValues.ACTIVITY_DEVICE).setFieldValue(deviceAtStoppointDataID);
-        setItemStatus(100);
+        setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
+                    
+
     }
-            
     private void cableCheck(int deviceAtStoppointDataID){
         c.fields.getElementByFieldName(TSValues.ACTIVITY_DEVICE).setFieldValue(deviceAtStoppointDataID);
-        setItemStatus(100);
+        setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
     }
     
     private void componentSetup(int caseDataID, int defaultStorage, int inventoryComponentRecordDataID, int componentDataID,int stoppointDataID,int componentAmount, Util util){
@@ -347,17 +283,16 @@ public class Activities extends CodeunitFormevents{
             }
             else{
                 if(defaultStorage == warehouseComponent.getWarehouseDataID()){
-                    setItemStatus(103);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_AWAITADMIN);
                     return;
                 }
-                
                 
                 
                 int defaultComponentStorageDataID = util.findWarehouseComponentDataID(componentDataID, defaultStorage);
                 //Well if a record dosent exist in default storage theres not much to do.........
                 if(defaultComponentStorageDataID == 0){
                     setRedirectErrorMsg("Home storage component record does not exist");
-                    setItemStatus(98);
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     return;
                 }
                 
@@ -367,14 +302,14 @@ public class Activities extends CodeunitFormevents{
                 //to be an record from the defaul storage instead
                 if(availableComponents == 0){
                     warehouseComponent = new WarehouseComponent(defaultComponentStorageSR);
-                    c.fields.getElementByFieldName(TSValues.ACTIVITY_FROMINVENTORY).setFieldValue(defaultStorage);
-                    c.fields.getElementByFieldName(TSValues.ACTIVITY_INVENTORYCOMPONENT).setFieldValue(defaultComponentStorageDataID);
+                    setIntFieldValue(TSValues.ACTIVITY_FROMINVENTORY, defaultStorage);
+                    setIntFieldValue(TSValues.ACTIVITY_INVENTORYCOMPONENT, defaultComponentStorageDataID);
                     try{
                         warehouseComponent.removeComponentsFromInventory(componentAmount);
                         amountRemoved = componentAmount;
                     }
                     catch(ValueException e){
-                        setItemStatus(103);
+                        setItemStatus(TSValues.ACTIVITIES_STATUS_AWAITADMIN);
                         return;
                     }
 
@@ -382,7 +317,7 @@ public class Activities extends CodeunitFormevents{
                 //Substract from current selected and the main warehouse
                 else{
                     int defaultWarehouseComponentAmount = componentAmount - availableComponents;
-                    c.fields.getElementByFieldName(TSValues.ACTIVITY_COMPONENTAMOUNT).setFieldValue(availableComponents);
+                    setIntFieldValue(TSValues.ACTIVITY_COMPONENTAMOUNT, availableComponents);
                     SolutionRecord spSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
                     defaultWarehouseActivity = util.createComponentSetupActivity(caseDataID, spSR, defaultStorage, defaultComponentStorageDataID, defaultWarehouseComponentAmount);
                     amountRemoved = availableComponents;
@@ -413,19 +348,19 @@ public class Activities extends CodeunitFormevents{
             }
                       
  
-            setItemStatus(100);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
 
         }
         catch(ValueException e){
             //setRedirectErrorMsg("Not enough items in inventory");
-            setItemStatus(98);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
         catch(IllegalArgumentException e){
             setRedirectErrorMsg("Invalid DataIDs");
-            setItemStatus(98);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
         catch(Exception e){
-            setItemStatus(101);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
         }
     }
     
@@ -442,16 +377,16 @@ public class Activities extends CodeunitFormevents{
 
             stoppointComponent.removeStoppointInvComponent(componentAmount);
             stoppointComponent.persistChanges();
-            setItemStatus(100);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
         }
         catch(IllegalArgumentException e){
-            setItemStatus(98);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
         catch(ValueException e){
-            setItemStatus(98);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
         catch(Exception e){
-            setItemStatus(101);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
         }
     }
     
@@ -482,18 +417,18 @@ public class Activities extends CodeunitFormevents{
                 warehouseComponentFrom.persistChanges();
                 warehouseComponentTo.persistChanges();
             }
-            setItemStatus(100);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
         }
         catch(IllegalArgumentException e){
             //Shouldnt really happen as theres a check before
-            setItemStatus(98);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
         catch(ValueException e){
             //If you remove more than there is present
-            setItemStatus(98);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
             catch(Exception e){
-            setItemStatus(101);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
         }
     }
 
@@ -507,20 +442,20 @@ public class Activities extends CodeunitFormevents{
             
             //Validation checks
             if(device.isSetAtStoppoint()){
-                setItemStatus(98);
+                setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
             
             //Set device storage
             device.setStorage(warehouseSR);
             device.persistChanges();
-            setItemStatus(100);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
         }
         catch(IllegalArgumentException e){
-            setItemStatus(98);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
         catch(Exception e){
-            setItemStatus(101);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
         }
     }
     
@@ -533,17 +468,17 @@ public class Activities extends CodeunitFormevents{
             
             //Validation checks
             if(!battery.isBattery()){
-                setItemStatus(98);
+                setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
             
             //Set device stoppoint
             battery.setStoppoint(stoppointSR);
             battery.persistChanges();
-            setItemStatus(100);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
         }
         catch(Exception e){
-            setItemStatus(101);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
         }
     }
     
@@ -554,16 +489,17 @@ public class Activities extends CodeunitFormevents{
             
             Device battery = new Device(batterySR);
             if(!battery.isBattery()){
-                setItemStatus(98);
+                setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
+            setIntFieldValue(TSValues.ACTIVITY_DEVICE, batteryOnStoppointDataID);
             battery.setStorage(storageSR);
             battery.persistChanges();
-            setItemStatus(100);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
 
         }
         catch(Exception e){
-            setItemStatus(101);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
         }
     }
 
@@ -572,8 +508,21 @@ public class Activities extends CodeunitFormevents{
     
     
 
+    private void setStringFieldValue(String fieldName, String value){
+        c.fields.getElementByFieldName(fieldName).setFieldValue(value);
+    }
     
+    private void setIntFieldValue(String fieldName, int value){
+        c.fields.getElementByFieldName(fieldName).setFieldValue(value);
+    }
+    
+    private String getStringFieldValue(String fieldName){
+        return c.fields.getElementByFieldName(fieldName).FieldValue;
+    }
 
+    private int getIntFieldValue(String fieldName){
+        return Parser.getInteger(c.fields.getElementByFieldName(fieldName).FieldValue);
+    }
   
     
 

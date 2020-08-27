@@ -70,11 +70,35 @@ public class TSValues {
     public static final String ACTIVITY_SUPPLIER = "SUPPLIER";
     public static final String ACTIVITY_SELECTEDDEVICETWO = "SELECTEDDEVICE2";
     public static final String ACTIVITY_SETUPBATTERY = "SETUPBATTERY";
+    public static final String ACTIVITY_SETUPMODULE = "SETUPMODULE";
+
     
     //public static final String batteryDef = "Batteri";
     //public static final String countdownModuleDef = "Countdown";
     
     
+    public static final String ACTIVITIYCODE_DEVICE_SETUP  = "171";
+    public static final String ACTIVITIYCODE_DEVICE_TAKEDOWN  = "172";
+    public static final String ACTIVITIYCODE_DEVICE_RESTART  = "174";
+    public static final String ACTIVITIYCODE_DEVICE_CABLECHECK  = "175";
+    public static final String ACTIVITIYCODE_BATTERY_SETUP = "168";
+    public static final String ACTIVITIYCODE_BATTERY_TAKEDOWN = "169";
+    public static final String ACTIVITIYCODE_COMPONENT_SETUP = "176";
+    public static final String ACTIVITIYCODE_COMPONENT_TAKEDOWN = "177";
+    public static final String ACTIVITIYCODE_STORAGEMOVE_COMPONENT = "178";
+    public static final String ACTIVITIYCODE_STORAGEMOVE_DEVICE = "179";
+    
+    
+    public static final String STATUSID = "StatusID";
+    public static final int ACTIVITIES_STATUS_INIT = 83;
+    public static final int ACTIVITIES_STATUS_USERERROR = 98;
+    public static final int ACTIVITIES_STATUS_APPROVED = 100;
+    public static final int ACTIVITIES_STATUS_SYSTEMERROR = 101;
+    public static final int ACTIVITIES_STATUS_AWAITADMIN = 103;
+    
+
+    
+
     
     
 }
