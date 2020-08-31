@@ -78,27 +78,15 @@ public class Activities extends CodeunitFormevents{
                 break;
                 
             case TSValues.ACTIVITIYCODE_BATTERY_TAKEDOWN:
-                if(stoppointDataID == 0 || batteryOnStoppointDataID == 0 || toWarehouseDataID == 0){
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                    break;
-                }
-                removeBattery(batteryOnStoppointDataID,toWarehouseDataID,util);
+                removeBattery(caseDataID,stoppointDataID,batteryOnStoppointDataID,toWarehouseDataID);
                 break;
                 
             case TSValues.ACTIVITIYCODE_DEVICE_SETUP:
-                if(stoppointDataID == 0 || SelectedDeviceDataID == 0 || (setupBattery == 1 && selectedDeviceTwoDataID == 0)){
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                    break;
-                }
-                setupDeviceOnStoppoint(caseDataID,stoppointDataID,SelectedDeviceDataID,setupBattery,selectedDeviceTwoDataID,util);
+                setupDeviceOnStoppoint(caseDataID,stoppointDataID,SelectedDeviceDataID,setupBattery,selectedDeviceTwoDataID);
                 break;
                 
             case TSValues.ACTIVITIYCODE_DEVICE_TAKEDOWN:
-                if(stoppointDataID == 0 || deviceAtStoppointDataID == 0 || toWarehouseDataID == 0){
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                    break;
-                }
-                removeDeviceFromStoppoint(caseDataID,stoppointDataID,deviceAtStoppointDataID,toWarehouseDataID,setupModule, SelectedDeviceDataID,util);
+                removeDeviceFromStoppoint(caseDataID,stoppointDataID,deviceAtStoppointDataID,toWarehouseDataID,setupModule, SelectedDeviceDataID);
                 break;
                 
             case TSValues.ACTIVITIYCODE_DEVICE_RESTART:
@@ -106,7 +94,6 @@ public class Activities extends CodeunitFormevents{
                 break;
                 
             case TSValues.ACTIVITIYCODE_DEVICE_CABLECHECK:
-
                 cableCheck(deviceAtStoppointDataID,stoppointDataID,caseDataID);
                 break;
                 
@@ -122,11 +109,7 @@ public class Activities extends CodeunitFormevents{
                 
                 
             case TSValues.ACTIVITIYCODE_COMPONENT_TAKEDOWN:
-                if(componentDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                    break;
-                }
-                componentTakedown(componentDataID,stoppointDataID,componentAmount,util);
+                componentTakedown(componentDataID,stoppointDataID,componentAmount);
                 break;
             
             case TSValues.ACTIVITIYCODE_STORAGEMOVE_COMPONENT:
@@ -154,11 +137,11 @@ public class Activities extends CodeunitFormevents{
     }
     
     /**
-     * Activity for setting a battery up on a stoppoint. Will fail if the selected device is not of the type battery.
-     * If the record has not yet been created it will set the device field to the given device on success.
-     * @param batteryDataID int Value with DataID of the selected device
+     * Activity for setting a battery up on a stoppoint. Will not do any changes and set status of record to user error if
+     * stoppoint and battery fields are not filled, or the battery selected is not of battery type.
+     * @param caseDataID int Value with DataID of the case, can be 0(No selected case by user)
+     * @param batteryDataID int Value with DataID of the selected battery deviceRemoved
      * @param stoppointDataID int Value with DataID of the selected stoppoint
-     * @param util Util class element
      */
     private void setupBattery(int caseDataID, int batteryDataID, int stoppointDataID){
         //Validation stage
@@ -205,128 +188,231 @@ public class Activities extends CodeunitFormevents{
     }
     
     
-    
     /**
-     * 
-     * @param caseDataID 
-     * @param stoppointDataID
-     * @param SelectedDeviceDataID
-     * @param SetupBattery
-     * @param SelectedDeviceTwoDataID
-     * @param util Util class 
+     * Activity for removing a battery from a stoppoint. Will not do any changes and set status of record to user error if
+     * stoppoint, battery and towarehouse fields are not filled, or the battery selected is not of battery type.
+     * @param caseDataID int Value with DataID of the case, can be 0(No selected case by user)
+     * @param stoppointDataID int Value with DataID of the selected stoppoint
+     * @param batteryDataID int Value with DataID of the selected deviceRemoved
+     * @param toWarehouseDataID int Value with DataID of the selected warehouse
      */
-    private void setupDeviceOnStoppoint(int caseDataID, int stoppointDataID, int SelectedDeviceDataID, int SetupBattery, int SelectedDeviceTwoDataID, Util util){
-
-        //Validation stage
-
-
-
-
-
-
-
-
+    private void removeBattery(int caseDataID, int stoppointDataID, int batteryDataID, int toWarehouseDataID){
+        //Validate for empty required fields
+        if(stoppointDataID == 0 || batteryDataID == 0 || toWarehouseDataID == 0){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            return;
+        }
+        SolutionRecord batterySR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, batteryDataID);
+        SolutionRecord storageSR = util.getSolutionRecord(TSValues.WAREHOUSE_ENTITY, toWarehouseDataID);
+        SolutionRecord stoppointSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
+        Device battery = new Device(batterySR);  
+        
         try{
-
-            
-            SolutionRecord spSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
-            SolutionRecord deviceCountdownSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, SelectedDeviceDataID);
-            Device deviceCountdown = new Device(deviceCountdownSR);
-
-            if(!deviceCountdown.isCountdownModule()){
-                setRedirectErrorMsg("Selected Device is not a countdown module");
+            if(!battery.isBattery()){
                 setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
-            
-            deviceCountdown.setStoppoint(spSR);
-            
-            setIntFieldValue(TSValues.ACTIVITY_DEVICE, SelectedDeviceDataID);
-            
-            if(SetupBattery == 1){
-                SolutionRecord deviceBatterySR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, SelectedDeviceTwoDataID);
-                Device deviceBattery = new Device(deviceBatterySR);
-
-                if(!deviceBattery.isBattery()){
-                    setRedirectErrorMsg("Selected Device is not a Battery");
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                    return;
-                }
-                deviceBattery.setStoppoint(spSR);
-                
-                SolutionRecordNew srn = util.createSetupBatteryActivity(caseDataID, spSR, deviceBatterySR);
-                setIntFieldValue(TSValues.ACTIVITY_SETUPBATTERY, 0);
-                setStringFieldValue(TSValues.ACTIVITY_SELECTEDDEVICETWO, "");
-                deviceBattery.persistChanges();
-                srn.persistChanges(false);
-            }
-            deviceCountdown.persistChanges();
-            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
-        }
-        catch(IllegalArgumentException e){
-            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
         catch(Exception e){
             setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
+            return;
         }
+            
+        //Execution stage
+        try {
+            battery.setStorage(storageSR);
+            if(c.StatusID == TSValues.ACTIVITIES_STATUS_USERERROR){
+                setItemStatus(TSValues.ACTIVITIES_STATUS_DELETE);
+                SolutionRecordNew srnCorrect = util.batteryTakedownRecord(batterySR, stoppointSR, toWarehouseDataID, caseDataID);
+                srnCorrect.persistChanges(false);
+            }
+            else{
+                setIntFieldValue(TSValues.ACTIVITY_DEVICE, batteryDataID);
+                setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
+
+            }
+            battery.persistChanges();
+        } catch (Exception ex) {
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
+        }
+    }
+    
+    
+    /**
+     * Activity for setting up a device on a stop point, offers optional setting up a battery at the same time. 
+     * Will not do any changes and set status of record to user error if stoppoint or  deviceRemoved is empty
+     * and if setupbattery is chosen battery must also be filled. Checks if deviceRemoved is countdown module and battery is a battery(If chosen)
+     * If setup battery is chosen, the function also creates a setup battery record at the same time for logging purposes.
+     * @param caseDataID int Value with DataID of the case, can be 0(No selected case by user)
+     * @param stoppointDataID int Value with DataID of the selected stoppoint
+     * @param deviceDataID int Value with DataID of the selected Countdown deviceRemoved
+     * @param setupBattery Int value with 0/1 if setup battery is selected
+     * @param batteryDataID int Value with DataID of the selected battery deviceRemoved
+     */
+    private void setupDeviceOnStoppoint(int caseDataID, int stoppointDataID, int deviceDataID, int setupBattery, int batteryDataID){
+
+    //Validation stage
+    if(stoppointDataID == 0 || deviceDataID == 0 || (setupBattery == 1 && batteryDataID == 0)){
+        setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+        return;
+    }
+
+    SolutionRecord spSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
+    SolutionRecord deviceCountdownSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, deviceDataID);
+    Device deviceCountdown = new Device(deviceCountdownSR);
+    SolutionRecord batterySR = null;
+    Device deviceBattery = null;
+
+    try{
+        if(!deviceCountdown.isCountdownModule()){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            return;
+        }
+            
+        if(setupBattery == 1){
+            batterySR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, batteryDataID);
+            deviceBattery = new Device(batterySR);
+            if(!deviceBattery.isBattery()){
+                setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+                return;
+            }
+        }
+    }
+    catch(Exception e){
+        setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
+        return;
+    }   
+        
+        
+    
+   //Execute stage
+    try {
+        deviceCountdown.setStoppoint(spSR);
+        if(setupBattery == 1){
+            deviceBattery.setStoppoint(spSR);
+        }
+        
+        if(c.StatusID == TSValues.ACTIVITIES_STATUS_USERERROR){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_DELETE);
+            SolutionRecordNew setupDevSrn = util.deviceSetupRecord(deviceCountdownSR, spSR, caseDataID);
+            setupDevSrn.persistChanges(false);
+        }
+        else{
+            setIntFieldValue(TSValues.ACTIVITY_SETUPBATTERY, 0);
+            setStringFieldValue(TSValues.ACTIVITY_SELECTEDDEVICETWO, "");
+            setIntFieldValue(TSValues.ACTIVITY_DEVICE, deviceDataID);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
+        }
+        
+        //Persist stuff
+        if(setupBattery == 1){
+            SolutionRecordNew setupBatterySrn = util.batterySetupRecord(batterySR, spSR, caseDataID);
+            setupBatterySrn.persistChanges(false);
+            deviceBattery.persistChanges();
+        }
+        
+        deviceCountdown.persistChanges();
+        
+    } catch (Exception ex) {
+        setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
+    }
+            
+            
+            
+                
+
+                
+                
+
+            
+
 
     }
     
     /**
-     * 
-     * @param caseDataID
-     * @param stoppointDataID
-     * @param deviceAtStoppointDataID
-     * @param toWarehouseDataID
-     * @param setupModule
-     * @param moduleDataID
-     * @param util 
+     * Activity for removing a device at a stop point, offers optional setting up another device at the same time. 
+     * Validates stoppoint, removed device and towarehouse are not empty values. If setup module is true setup device is also validated to not be empty.
+     * Removed device and setup device(if chosen) is validated if they are countdown modules. If validation fails sets the record to fail user error status
+     * and performs no changes.
+     * If successful validation and the setupModule is true, function creates an additional setupactivity record for logging purposes.
+     * @param caseDataID int Value with DataID of the case, can be 0(No selected case by user)
+     * @param stoppointDataID int Value with DataID of the selected stoppoint
+     * @param deviceRemovedDataID int Value with DataID of the device that is being removed
+     * @param toWarehouseDataID int value with DataID of the warehouse the device is being moved to
+     * @param setupModule int value with 0 or 1 if a setupmodule option is chosen. 1 is true
+     * @param deviceSetupDataID int value with DataID of the device being setup on stoppoint. Only relevant if setupModule is chosen
      */
-    private void removeDeviceFromStoppoint(int caseDataID, int stoppointDataID, int deviceAtStoppointDataID, int toWarehouseDataID, int setupModule, int moduleDataID, Util util){
+    private void removeDeviceFromStoppoint(int caseDataID, int stoppointDataID, int deviceRemovedDataID, int toWarehouseDataID, int setupModule, int deviceSetupDataID){
+        if(stoppointDataID == 0 || deviceRemovedDataID == 0 || toWarehouseDataID == 0 || (setupModule == 1 && deviceSetupDataID == 0) || deviceRemovedDataID == deviceSetupDataID){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            return;
+        }
+        
+        SolutionRecord deviceRemovedSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, deviceRemovedDataID);
+        SolutionRecord warehouseSR = util.getSolutionRecord(TSValues.WAREHOUSE_ENTITY, toWarehouseDataID);
+        SolutionRecord stoppointSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
+        Device deviceRemoved = new Device(deviceRemovedSR);
+        
+        SolutionRecord deviceSetupSR = null;
+        Device deviceSetup = null;
+        
         try{
-            SolutionRecord deviceSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, deviceAtStoppointDataID);
-            SolutionRecord warehouseSR = util.getSolutionRecord(TSValues.WAREHOUSE_ENTITY, toWarehouseDataID);
-
-            Device device = new Device(deviceSR);
-            if(!device.isCountdownModule()){
+            if(!deviceRemoved.isCountdownModule()){
                 setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
-            device.setStorage(warehouseSR);
-            if(setupModule == 1 && moduleDataID != 0){
-                SolutionRecord setupModuleSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, moduleDataID);
-                Device setupDevice = new Device(setupModuleSR);
-                if(!setupDevice.isCountdownModule()){
+            if(setupModule == 1){
+                deviceSetupSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, deviceSetupDataID);
+                deviceSetup = new Device(deviceSetupSR);
+                if(!deviceSetup.isCountdownModule()){
                     setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     return;
                 }
-                
+            }
+        }
+        catch(Exception e){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
+            return;
+        }   
+            
+
+        
+        try{
+            deviceRemoved.setStorage(warehouseSR);
+            if(setupModule == 1){
+                deviceSetup.setStoppoint(stoppointSR);
+            }
+            if(c.StatusID == TSValues.ACTIVITIES_STATUS_USERERROR){
+                setItemStatus(TSValues.ACTIVITIES_STATUS_DELETE);
+                SolutionRecordNew takedownActivity = util.deviceTakedownRecord(deviceRemovedSR, stoppointSR, toWarehouseDataID, caseDataID);
+                takedownActivity.persistChanges(false);
+            }
+            else{
                 setIntFieldValue(TSValues.ACTIVITY_SETUPMODULE, 0);
                 setStringFieldValue(TSValues.ACTIVITY_SELECTEDDEVICE, "");
-                
-                SolutionRecord stoppointSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
-
-                setupDevice.setStoppoint(stoppointSR);
-                
-                SolutionRecordNew setupActivity = util.createSetupActivity(caseDataID,stoppointSR,setupModuleSR);
-                
-                setupActivity.persistChanges(false);
-                setupDevice.persistChanges();
+                setIntFieldValue(TSValues.ACTIVITY_DEVICE, deviceRemovedDataID);
+                setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
             }
-            setIntFieldValue(TSValues.ACTIVITY_DEVICE, deviceAtStoppointDataID);
-            
-            device.persistChanges();
-            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
-
-        }
-        catch(IllegalArgumentException e){
-            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            if(setupModule == 1){
+                SolutionRecordNew setupActivity = util.deviceSetupRecord(deviceSetupSR, stoppointSR, caseDataID);
+                setupActivity.persistChanges(false);
+                deviceSetup.persistChanges();
+            }
+            deviceRemoved.persistChanges();
         }
         catch(Exception e){
             setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
-        }
+        }       
+
     }
     
+    /**
+     * Activity for restarting a device, this changes nothing in the system, exist 
+     * for logging purposes
+     * @param deviceDataID int value with the DataID of the device being restarted
+     * @param stoppointDataID int value with the stoppoint chosen
+     * @param caseDataID int Value with DataID of the case, can be 0(No selected case by user)
+     */
     private void restartDevice(int deviceDataID, int stoppointDataID, int caseDataID){
         //Validation
         if(deviceDataID == 0 || stoppointDataID == 0){
@@ -355,6 +441,15 @@ public class Activities extends CodeunitFormevents{
                     
 
     }
+    
+        
+    /**
+     * Activity for performing cablecheck on a device, this changes nothing in the system, exist 
+     * for logging purposes
+     * @param deviceDataID int value with the DataID of the device that has had cablecheck performed on
+     * @param stoppointDataID int value with the stoppoint chosen
+     * @param caseDataID int Value with DataID of the case, can be 0(No selected case by user)
+     */
     private void cableCheck(int deviceDataID, int stoppointDataID, int caseDataID){
         //Validation
         if(deviceDataID == 0 || stoppointDataID == 0){
@@ -376,7 +471,6 @@ public class Activities extends CodeunitFormevents{
             c.fields.getElementByFieldName(TSValues.ACTIVITY_DEVICE).setFieldValue(deviceDataID);
             setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
         }
-        
     }
     
     private void componentSetup(int caseDataID, int defaultStorage, int inventoryComponentRecordDataID, int componentDataID,int stoppointDataID,int componentAmount, Util util){
@@ -477,13 +571,21 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
-    private void componentTakedown(int componentDataID, int stoppointDataID,int componentAmount, Util util){
+    private void componentTakedown(int componentDataID, int stoppointDataID,int componentAmount){
+        if(componentDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            return;
+        }
+        
+        
         int spcDataID = util.findStoppointComponentDataID(componentDataID,stoppointDataID);
         
         if(spcDataID == 0){
             //Do nothing, we cant remove stuff that dont exist
             return;
         }
+        
+        
         try{
             SolutionRecord spcSR = util.getSolutionRecord(TSValues.STOPPOINTINV_ENTITY, spcDataID);
             StoppointComponent stoppointComponent = new StoppointComponent(spcSR);
@@ -559,7 +661,7 @@ public class Activities extends CodeunitFormevents{
                 return;
             }
             
-            //Set device storage
+            //Set deviceRemoved storage
             device.setStorage(warehouseSR);
             device.persistChanges();
             setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
@@ -573,27 +675,6 @@ public class Activities extends CodeunitFormevents{
     }
     
 
-    
-    private void removeBattery(int batteryOnStoppointDataID, int toWarehouseDataID, Util util){
-        try{
-            SolutionRecord batterySR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, batteryOnStoppointDataID);
-            SolutionRecord storageSR = util.getSolutionRecord(TSValues.WAREHOUSE_ENTITY, toWarehouseDataID);
-            
-            Device battery = new Device(batterySR);
-            if(!battery.isBattery()){
-                setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                return;
-            }
-            setIntFieldValue(TSValues.ACTIVITY_DEVICE, batteryOnStoppointDataID);
-            battery.setStorage(storageSR);
-            battery.persistChanges();
-            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
-
-        }
-        catch(Exception e){
-            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
-        }
-    }
 
     
 

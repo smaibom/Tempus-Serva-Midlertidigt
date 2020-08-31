@@ -42,10 +42,76 @@ public class Util {
     
     
     
+    
+    public SolutionRecordNew batterySetupRecord(SolutionRecord deviceSR, SolutionRecord stoppointSR, int caseDataID) throws Exception{
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
+        if(caseDataID != 0){
+            SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+            srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
+        }
+        srn.setReference(TSValues.ACTIVITY_DEVICE, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_SELECTEDDEVICETWO, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
+        srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_BATTERY_SETUP);
+        srn.setValueInteger(TSValues.STATUSID, TSValues.ACTIVITIES_STATUS_APPROVED);
+        return srn;
+    }
+    
+    public SolutionRecordNew batteryTakedownRecord(SolutionRecord deviceSR, SolutionRecord stoppointSR,int toWarehouseDataID, int caseDataID) throws Exception{
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
+        if(caseDataID != 0){
+            SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+            srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
+        }
+        srn.setReference(TSValues.ACTIVITY_DEVICE, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_BATTERYONSTOPPOINT, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
+        srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_BATTERY_TAKEDOWN);
+        srn.setValueInteger(TSValues.ACTIVITY_TOINVENTORY, toWarehouseDataID);
+        srn.setValueInteger(TSValues.STATUSID, TSValues.ACTIVITIES_STATUS_APPROVED);
+        return srn;
+    }
+    
+    public SolutionRecordNew deviceSetupRecord(SolutionRecord deviceSR, SolutionRecord stoppointSR,int caseDataID) throws Exception{
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
+        if(caseDataID != 0){
+            SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+            srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
+        }
+        srn.setReference(TSValues.ACTIVITY_DEVICE, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_SELECTEDDEVICE, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
+        srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_DEVICE_SETUP);
+        srn.setValueInteger(TSValues.STATUSID, TSValues.ACTIVITIES_STATUS_APPROVED);
+        return srn;
+    }
+    
+    public SolutionRecordNew deviceTakedownRecord(SolutionRecord deviceSR, SolutionRecord stoppointSR,int toWarehouseDataID, int caseDataID) throws Exception{
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
+        if(caseDataID != 0){
+            SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+            srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
+        }
+        srn.setReference(TSValues.ACTIVITY_DEVICE, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_DEVICEONSTOPPOINT, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
+        srn.setValueInteger(TSValues.ACTIVITY_TOINVENTORY, toWarehouseDataID);
+        srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_DEVICE_TAKEDOWN);
+        srn.setValueInteger(TSValues.STATUSID, TSValues.ACTIVITIES_STATUS_APPROVED);
+        return srn;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * Creates a restart device Solution Record that is set to approved, validation of 
      * records is assumed to be done before calling this function
-     * @param deviceSR
+     * @param deviceSR 
      * @param stoppointSR
      * @return
      * @throws Exception 
@@ -79,19 +145,7 @@ public class Util {
         return srn;
     }
     
-    public SolutionRecordNew batterySetupRecord(SolutionRecord deviceSR, SolutionRecord stoppointSR, int caseDataID) throws Exception{
-        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
-        if(caseDataID != 0){
-            SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
-            srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
-        }
-        srn.setReference(TSValues.ACTIVITY_DEVICE, deviceSR);
-        srn.setReference(TSValues.ACTIVITY_SELECTEDDEVICETWO, deviceSR);
-        srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
-        srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_BATTERY_SETUP);
-        srn.setValueInteger(TSValues.STATUSID, TSValues.ACTIVITIES_STATUS_APPROVED);
-        return srn;
-    }
+
     
     
         
