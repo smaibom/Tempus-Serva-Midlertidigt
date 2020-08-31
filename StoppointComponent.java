@@ -8,8 +8,9 @@ package activities;
 
 import dk.tempusserva.api.SolutionRecord;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
+
 /**
- *
+ * This class is designed as a wrapper to get/set field values of a Stoppoint Component Entity Record
  * @author XSMA
  */
 public class StoppointComponent {
@@ -17,7 +18,10 @@ public class StoppointComponent {
 
     private SolutionRecord sr;
 
-    
+    /**
+     * Creates a stoppoint component class
+     * @param StoppointComponentSR SolutionRecord of the stoppoint component
+     */
     public StoppointComponent(SolutionRecord StoppointComponentSR){
         if(StoppointComponentSR.getInstanceID() == 0){
             throw new IllegalArgumentException("Invalid DataIDs");

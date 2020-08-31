@@ -12,30 +12,33 @@ package activities;
 public class TSValues {
     
     
-    /** Entity name on the Device page */
+    /** Device Entity id */
     public static final String DEVICE_ENTITY = "devices";
-    /** Stoppoint field reference on Device page */
+    /** Stoppoint field id in the device entity */
     public static final String DEVICE_STOPPPOINT = "INSTALLEDATSTOPPOINT";
-    /** Storage Location field reference on Device page */
+    /** Storage Location field id in the device entity */
     public static final String DEVICE_STORAGELOC = "STORAGELOCATION";
-    /** Category field reference on the Device page */
+    /** Category field id in the device entity */
     public static final String DEVICE_CAT = "DEVICECATEGORY";
 
     
-    /** Entity name on the Stoppoint Inventory page */
+    /** Stoppoint Inventory Entity id */
     public static final String STOPPOINTINV_ENTITY = "stoppointinventory";
-    /** Stoppoint field reference on the Stoppoint Inventory page */
+    /** Stoppoint field id in the stoppoint inventory entity */
     public static final String STOPPOINTINV_STOPPOINT = "STOPPOINT";
-    /** Component field reference on the Stoppoint Inventory page */
+    /** Component field id in the stoppoint inventory entity  */
     public static final String STOPPOINTINV_COMPONENT = "COMPONENT";
-    /** Amount field reference on the Stoppoint Inventory page */
+    /** Amount field id in the stoppoint inventory entity  */
     public static final String STOPPOINTINV_AMOUNT = "AMOUNT";
     
     
-    /** Entity name for the Component Inventory page */
+    /** Component Storage Entity id */
     public static final String COMPONENTSTORAGE_ENTITY = "warehouseallocation";
+    /** Amount field id in the component storage entity */
     public static final String COMPONENTSTORAGE_AMOUNT = "AMOUNT";
+    /** Warehouse field id in the component storage entity */
     public static final String COMPONENTSTORAGE_WAREHOUSE = "WAREHOUSE";
+    /** Component field id in the component storage entity */
     public static final String COMPONENTSTORAGE_COMPONENT = "COMPONENT";
     
     
@@ -95,7 +98,7 @@ public class TSValues {
     public static final int ACTIVITIES_STATUS_APPROVED = 100;
     public static final int ACTIVITIES_STATUS_SYSTEMERROR = 101;
     public static final int ACTIVITIES_STATUS_AWAITADMIN = 103;
-    
+    public static final int ACTIVITIES_STATUS_DELETE = 108;
 
     
 

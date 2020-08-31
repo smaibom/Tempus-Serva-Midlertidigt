@@ -1,4 +1,5 @@
 
+//Dictionary with the fields that is checked/unchecked for validation when they are hidden or shown. Is of type: {String - Child id of the element : Element - Jquery variable of the parent element}
 var fieldNames = {'DATA_TOINVENTORY' : $('#VB_DATA_TOINVENTORY'),
               'DATA_STOPPOINT' : $('#VB_DATA_STOPPOINT'),
               'DATA_DEVICEONSTOPPOINT' : $('#VB_DATA_DEVICEONSTOPPOINT'),
@@ -13,23 +14,25 @@ var fieldNames = {'DATA_TOINVENTORY' : $('#VB_DATA_TOINVENTORY'),
 
 
 $().ready( function() {
-    try {
-    ShowPage('20');
-    $("#PageSelector_").hide();
+    try {ShowPage('20'); $("#PageSelector_").hide(); } catch(err) {};
 
-        document.getElementsByClassName("updateSubmit btn btn-primary form-control")[1].type="hidden";
-    }
-    catch(err) {
 
-    }
+    try{ document.getElementsByClassName("updateSubmit btn btn-primary form-control")[1].type="hidden"; } catch(err) {};
 
-    setTimeout(a, 100);
+    
+    setTimeout(errorMsg, 100);
 
     validateHiddenToTrue(fieldNames);
 });
 
+
+/**
+ * Function to "hack" Tempusservas validation when using javascript dependancies
+ * It sets the validation of given fields to true when they are Hidden and
+ * attempts to validate them to false when showing again(This will fail if the user already provided valid input)
+ * @param  { String : Element } Dictionary each entry key is the String value of the child of the Jquery element that is the value of the record.
+ */
 function validateHiddenToTrue(fields){
-    alert('test');
      $.each(fields, function(key,value){
         var isTrue = value.attr("class") != "FieldValue tsValidateFalse"
         if(value.css("display") == "none"){
@@ -43,9 +46,17 @@ function validateHiddenToTrue(fields){
 };
 
 
+/**
+* On change function to validate all the fields when a user changes input in the activity field
+*/
 $('#VB_DATA_ACTIVITY').on('change',function{validateHiddenToTrue(fieldNames);});
 
 
+
+/**
+* Onchange function for the setupbattery checkbox. Sets validation of the field  that gets hidden or shown to true/false
+* As this function does not have any value using the val() function, it checks if the field it is validating is hidden or shown instead
+**/
 
 $('#VB_DATA_SETUPBATTERY').on('change',function(){
     var isHidden = $('#VB_DATA_SELECTEDDEVICE2').css("display") == "none";
@@ -57,6 +68,10 @@ $('#VB_DATA_SETUPBATTERY').on('change',function(){
     }
 });
 
+/**
+* Onchange function for the setupbattery checkbox. Sets validation of the field  that gets hidden or shown to true/false
+* As this function does not have any value using the val() function, it checks if the field it is validating is hidden or shown instead
+**/
 $('#VB_DATA_SETUPMODULE').on('change',function(){
     var isHidden = $('#VB_DATA_SELECTEDDEVICE').css("display") == "none";
     if(isHidden){
@@ -69,7 +84,10 @@ $('#VB_DATA_SETUPMODULE').on('change',function(){
 
 
 
-function a(){
+/**
+*
+**/
+function errorMsg (){
 try {
     var url = new URL(window.location.href);
     var error = url.searchParams.get("errormsg");

@@ -11,6 +11,8 @@ import dk.tempusserva.api.Session;
 import dk.tempusserva.api.SessionFactory;
 import dk.tempusserva.api.SolutionRecord;
 import dk.tempusserva.api.SolutionRecordNew;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
 /**
@@ -23,7 +25,7 @@ import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 public class Activities extends CodeunitFormevents{
     
 
-    
+    Util util;
 
     
     
@@ -45,13 +47,12 @@ public class Activities extends CodeunitFormevents{
 
         if(!(statusID == TSValues.ACTIVITIES_STATUS_INIT || statusID == TSValues.ACTIVITIES_STATUS_USERERROR || statusID == TSValues.ACTIVITIES_STATUS_AWAITADMIN)){
             return;
+            
         }
-        
         
         String typeField = getStringFieldValue(TSValues.ACTIVITY_ACTIVITY);
         int SelectedDeviceDataID =  getIntFieldValue(TSValues.ACTIVITY_SELECTEDDEVICE);
         int deviceAtStoppointDataID = getIntFieldValue(TSValues.ACTIVITY_DEVICEONSTOPPOINT);
-
         int stoppointDataID = getIntFieldValue(TSValues.ACTIVITY_STOPPOINT);
         int toWarehouseDataID = getIntFieldValue(TSValues.ACTIVITY_TOINVENTORY);
         int fromWarehouseDataID = getIntFieldValue(TSValues.ACTIVITY_FROMINVENTORY);
@@ -69,15 +70,11 @@ public class Activities extends CodeunitFormevents{
         
  
         Session ses = SessionFactory.getSession(this);
-        Util util = new Util(ses);
+        util = new Util(ses);
         
         switch(typeField){
             case TSValues.ACTIVITIYCODE_BATTERY_SETUP:
-                if(stoppointDataID == 0 || selectedDeviceTwoDataID == 0 ){
-                        setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                        break;
-                }
-                setupBattery(selectedDeviceTwoDataID,stoppointDataID,util);
+                setupBattery(caseDataID,selectedDeviceTwoDataID,stoppointDataID);
                 break;
                 
             case TSValues.ACTIVITIYCODE_BATTERY_TAKEDOWN:
@@ -105,19 +102,12 @@ public class Activities extends CodeunitFormevents{
                 break;
                 
             case TSValues.ACTIVITIYCODE_DEVICE_RESTART:
-                if(stoppointDataID == 0 || deviceAtStoppointDataID == 0){
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                    break;
-                }
-                restartDevice(deviceAtStoppointDataID);
+                restartDevice(deviceAtStoppointDataID,stoppointDataID,caseDataID);
                 break;
                 
             case TSValues.ACTIVITIYCODE_DEVICE_CABLECHECK:
-                if(stoppointDataID == 0 || deviceAtStoppointDataID == 0){
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                        break;
-                }
-                cableCheck(deviceAtStoppointDataID);
+
+                cableCheck(deviceAtStoppointDataID,stoppointDataID,caseDataID);
                 break;
                 
             case TSValues.ACTIVITIYCODE_COMPONENT_SETUP:
@@ -163,9 +153,81 @@ public class Activities extends CodeunitFormevents{
         
     }
     
-    
-    private void setupDeviceOnStoppoint(int caseDataID, int stoppointDataID, int SelectedDeviceDataID, int SetupBattery, int SelectedDeviceTwoDataID, Util util){
+    /**
+     * Activity for setting a battery up on a stoppoint. Will fail if the selected device is not of the type battery.
+     * If the record has not yet been created it will set the device field to the given device on success.
+     * @param batteryDataID int Value with DataID of the selected device
+     * @param stoppointDataID int Value with DataID of the selected stoppoint
+     * @param util Util class element
+     */
+    private void setupBattery(int caseDataID, int batteryDataID, int stoppointDataID){
+        //Validation stage
+        if(stoppointDataID == 0 || batteryDataID == 0 ){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            return;
+        }
+        
+        SolutionRecord batterySR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, batteryDataID);        
+        Device battery = new Device(batterySR);
+         
+        try {
+            if(!battery.isBattery()){
+                setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+                return;    
+            }
+        } catch (Exception ex) {
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
+            return;
+        }
+        
+        SolutionRecord stoppointSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
+
+        
+        //Execution stage
         try{
+            if(c.StatusID == TSValues.ACTIVITIES_STATUS_USERERROR){
+                setItemStatus(TSValues.ACTIVITIES_STATUS_DELETE);
+                SolutionRecordNew correctSrn = util.batterySetupRecord(batterySR, stoppointSR, caseDataID);
+                correctSrn.persistChanges(false);
+            }
+            else{
+                setIntFieldValue(TSValues.ACTIVITY_DEVICE, batteryDataID);
+                setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
+            }
+            
+            battery.setStoppoint(stoppointSR);
+            battery.persistChanges();
+            
+        }
+        catch(Exception e){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
+        }
+    }
+    
+    
+    
+    /**
+     * 
+     * @param caseDataID 
+     * @param stoppointDataID
+     * @param SelectedDeviceDataID
+     * @param SetupBattery
+     * @param SelectedDeviceTwoDataID
+     * @param util Util class 
+     */
+    private void setupDeviceOnStoppoint(int caseDataID, int stoppointDataID, int SelectedDeviceDataID, int SetupBattery, int SelectedDeviceTwoDataID, Util util){
+
+        //Validation stage
+
+
+
+
+
+
+
+
+        try{
+
             
             SolutionRecord spSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
             SolutionRecord deviceCountdownSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, SelectedDeviceDataID);
@@ -210,6 +272,16 @@ public class Activities extends CodeunitFormevents{
 
     }
     
+    /**
+     * 
+     * @param caseDataID
+     * @param stoppointDataID
+     * @param deviceAtStoppointDataID
+     * @param toWarehouseDataID
+     * @param setupModule
+     * @param moduleDataID
+     * @param util 
+     */
     private void removeDeviceFromStoppoint(int caseDataID, int stoppointDataID, int deviceAtStoppointDataID, int toWarehouseDataID, int setupModule, int moduleDataID, Util util){
         try{
             SolutionRecord deviceSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, deviceAtStoppointDataID);
@@ -255,15 +327,56 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
-    private void restartDevice(int deviceAtStoppointDataID){
-        c.fields.getElementByFieldName(TSValues.ACTIVITY_DEVICE).setFieldValue(deviceAtStoppointDataID);
-        setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
+    private void restartDevice(int deviceDataID, int stoppointDataID, int caseDataID){
+        //Validation
+        if(deviceDataID == 0 || stoppointDataID == 0){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            return;
+        }
+        
+
+       
+        if(c.StatusID == TSValues.ACTIVITIES_STATUS_USERERROR){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_DELETE);
+            SolutionRecord srDev = util.getSolutionRecord(TSValues.DEVICE_ENTITY, deviceDataID);
+            SolutionRecord srSP = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
+            try {
+                SolutionRecordNew srnCorrect = util.restartDeviceRecord(srDev,srSP,caseDataID);
+                srnCorrect.persistChanges(false);
+            } catch (Exception ex) {
+            }
+        }
+        else{
+            c.fields.getElementByFieldName(TSValues.ACTIVITY_DEVICE).setFieldValue(deviceDataID);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
+        }
+        
+
                     
 
     }
-    private void cableCheck(int deviceAtStoppointDataID){
-        c.fields.getElementByFieldName(TSValues.ACTIVITY_DEVICE).setFieldValue(deviceAtStoppointDataID);
-        setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
+    private void cableCheck(int deviceDataID, int stoppointDataID, int caseDataID){
+        //Validation
+        if(deviceDataID == 0 || stoppointDataID == 0){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            return;
+        }
+        
+        if(c.StatusID == TSValues.ACTIVITIES_STATUS_USERERROR){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_DELETE);
+            SolutionRecord srDev = util.getSolutionRecord(TSValues.DEVICE_ENTITY, deviceDataID);
+            SolutionRecord srSP = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
+            try {
+                SolutionRecordNew srnCorrect = util.cableCheckRecord(srDev,srSP,caseDataID);
+                srnCorrect.persistChanges(false);
+            } catch (Exception ex) {
+            }
+        }
+        else{
+            c.fields.getElementByFieldName(TSValues.ACTIVITY_DEVICE).setFieldValue(deviceDataID);
+            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
+        }
+        
     }
     
     private void componentSetup(int caseDataID, int defaultStorage, int inventoryComponentRecordDataID, int componentDataID,int stoppointDataID,int componentAmount, Util util){
@@ -459,28 +572,7 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
-    private void setupBattery(int SelectedDeviceDataID, int stoppointDataID, Util util){
-        try{
-            //Get records
-            SolutionRecord batterySR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, SelectedDeviceDataID);
-            SolutionRecord stoppointSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
-            Device battery = new Device(batterySR);
-            
-            //Validation checks
-            if(!battery.isBattery()){
-                setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                return;
-            }
-            
-            //Set device stoppoint
-            battery.setStoppoint(stoppointSR);
-            battery.persistChanges();
-            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
-        }
-        catch(Exception e){
-            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
-        }
-    }
+
     
     private void removeBattery(int batteryOnStoppointDataID, int toWarehouseDataID, Util util){
         try{

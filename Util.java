@@ -42,9 +42,61 @@ public class Util {
     
     
     
+    /**
+     * Creates a restart device Solution Record that is set to approved, validation of 
+     * records is assumed to be done before calling this function
+     * @param deviceSR
+     * @param stoppointSR
+     * @return
+     * @throws Exception 
+     */
+    public SolutionRecordNew restartDeviceRecord(SolutionRecord deviceSR, SolutionRecord stoppointSR, int caseDataID) throws Exception{
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
+        if(caseDataID != 0){
+            SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+            srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
+        }
+        srn.setReference(TSValues.ACTIVITY_DEVICE, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_DEVICEONSTOPPOINT, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
+        srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_DEVICE_RESTART);
+        srn.setValueInteger(TSValues.STATUSID, TSValues.ACTIVITIES_STATUS_APPROVED);
+        return srn;
+    }
+    
+    
+    public SolutionRecordNew cableCheckRecord(SolutionRecord deviceSR, SolutionRecord stoppointSR, int caseDataID) throws Exception{
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
+        if(caseDataID != 0){
+            SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+            srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
+        }
+        srn.setReference(TSValues.ACTIVITY_DEVICE, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_DEVICEONSTOPPOINT, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
+        srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_DEVICE_CABLECHECK);
+        srn.setValueInteger(TSValues.STATUSID, TSValues.ACTIVITIES_STATUS_APPROVED);
+        return srn;
+    }
+    
+    public SolutionRecordNew batterySetupRecord(SolutionRecord deviceSR, SolutionRecord stoppointSR, int caseDataID) throws Exception{
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
+        if(caseDataID != 0){
+            SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+            srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
+        }
+        srn.setReference(TSValues.ACTIVITY_DEVICE, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_SELECTEDDEVICETWO, deviceSR);
+        srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
+        srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_BATTERY_SETUP);
+        srn.setValueInteger(TSValues.STATUSID, TSValues.ACTIVITIES_STATUS_APPROVED);
+        return srn;
+    }
+    
+    
         
     /**
-     * Creates a new record in the stoppoint inventory entity with the given component and amount and a stoppoint.
+     * Creates a new record in the stoppoint inventory entity with the given componen t and amount and a stoppoint.
      * Does not persist data
      * @param stoppointSR SolutionRecord of a specific stoppoint
      * @param componentSR SolutionRecord of the component
@@ -59,8 +111,6 @@ public class Util {
         if(stoppointSR.getInstanceID() == 0 || componentSR.getInstanceID() == 0){
             throw new IllegalArgumentException("Invalid DataIDs");
         }
-
-        
         SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.STOPPOINTINV_ENTITY);
         srn.setReference(TSValues.STOPPOINTINV_STOPPOINT, stoppointSR);
         srn.setReference(TSValues.STOPPOINTINV_COMPONENT, componentSR);
@@ -144,8 +194,8 @@ public class Util {
             srn.setReference(TSValues.ACTIVITY_DEVICE, deviceSR);
             srn.setReference(TSValues.ACTIVITY_SELECTEDDEVICE, deviceSR);
             srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
-            srn.setValueInteger(TSValues.ACTIVITY_ACTIVITY, 168);
-            srn.setValueInteger("StatusID",100);
+            srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_BATTERY_SETUP);
+            srn.setValueInteger(TSValues.STATUSID,TSValues.ACTIVITIES_STATUS_APPROVED);
             return srn;
         }
         else{
@@ -169,8 +219,8 @@ public class Util {
             srn.setReference(TSValues.ACTIVITY_SELECTEDDEVICE, deviceSR);
 
             srn.setReference(TSValues.ACTIVITY_STOPPOINT, stoppointSR);
-            srn.setValueInteger(TSValues.ACTIVITY_ACTIVITY, 171);
-            srn.setValueInteger("StatusID",100);
+            srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_DEVICE_SETUP);
+            srn.setValueInteger(TSValues.STATUSID,TSValues.ACTIVITIES_STATUS_APPROVED);
             return srn;
         }
         else{
@@ -179,31 +229,7 @@ public class Util {
         
     }
     
-    
-    public SolutionRecordNew createActivityRecord(int caseDataID, HashMap<String,SolutionRecord> records, int activityID, int statusID) throws Exception{
-        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
-        if(caseDataID != 0){
-                SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
-                srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
-                
-        }
-        
-        for (Map.Entry<String, SolutionRecord> entry : records.entrySet()) {
-            String key = entry.getKey();
-            SolutionRecord value = entry.getValue();
-            if(value.getInstanceID() == 0){
-                throw new IllegalArgumentException("Invalid DataIDs");
-            }
-            srn.setReference(key, value);
-        }
-        srn.setValueInteger(TSValues.ACTIVITY_ACTIVITY, activityID);
-        srn.setValueInteger("StatusID",statusID);
-        
-        return srn;
-    }
-    
-    
-    
+
     public SolutionRecordNew createComponentSetupActivity(int caseDataID, SolutionRecord stoppointSR, int fromWarehouseDataID, int warehouseComponentDataID, int amount) throws Exception{
         SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
         if(caseDataID != 0){
@@ -214,8 +240,8 @@ public class Util {
         srn.setValueInteger(TSValues.ACTIVITY_FROMINVENTORY, fromWarehouseDataID);
         srn.setValueInteger(TSValues.ACTIVITY_INVENTORYCOMPONENT, warehouseComponentDataID);
         srn.setValueInteger(TSValues.ACTIVITY_COMPONENTAMOUNT, amount);
-        srn.setValueInteger(TSValues.ACTIVITY_ACTIVITY, 176);
-        srn.setValueInteger("StatusID",83);
+        srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_COMPONENT_SETUP);
+        srn.setValueInteger(TSValues.STATUSID,TSValues.ACTIVITIES_STATUS_INIT);
         return srn;
 
         

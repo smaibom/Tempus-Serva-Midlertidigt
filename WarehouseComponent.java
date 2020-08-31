@@ -9,7 +9,7 @@ import dk.tempusserva.api.SolutionRecord;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
 /**
- *
+ * This class is designed as a wrapper to get/set field values of a Warehouse Component Entity Record
  * @author XSMA
  */
 public class WarehouseComponent {
@@ -71,7 +71,11 @@ public class WarehouseComponent {
         return sr.getValueInteger(TSValues.COMPONENTSTORAGE_COMPONENT);
     }
     
-    
+    /**
+     * Gets the DataID of the warehouse 
+     * @return int value with the DataID of the warehouse record
+     * @throws Exception  
+     */
     public int getWarehouseDataID() throws Exception{
         return sr.getValueInteger(TSValues.COMPONENTSTORAGE_WAREHOUSE);
     }
