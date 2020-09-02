@@ -145,6 +145,21 @@ public class Util {
         return srn;
     }
     
+    
+    public SolutionRecordNew setupComponentActivityRecord(int caseDataID, SolutionRecord spSR, int fromWarehouseDataID, int warehouseComponentDataID, int amount, int statusID) throws Exception{
+        SolutionRecordNew srn = ses.getSolutionRecordNew(TSValues.ACTIVITY_ENTITY);
+        if(caseDataID != 0){
+            SolutionRecord caseSR = getSolutionRecord(TSValues.CASE_ENTITY, caseDataID);
+            srn.setReference(TSValues.ACTIVITY_CASE, caseSR);
+        }
+        srn.setReference(TSValues.ACTIVITY_STOPPOINT, spSR);
+        srn.setValueInteger(TSValues.ACTIVITY_FROMINVENTORY, fromWarehouseDataID);
+        srn.setValueInteger(TSValues.ACTIVITY_INVENTORYCOMPONENT, warehouseComponentDataID);
+        srn.setValueInteger(TSValues.ACTIVITY_COMPONENTAMOUNT, amount);
+        srn.setValue(TSValues.ACTIVITY_ACTIVITY, TSValues.ACTIVITIYCODE_COMPONENT_SETUP);
+        srn.setValueInteger(TSValues.STATUSID,statusID);
+        return srn;
+    }
 
     
     
@@ -189,6 +204,7 @@ public class Util {
         }
         return 0;
     }
+    
     
     
    

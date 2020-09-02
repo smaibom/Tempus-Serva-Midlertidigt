@@ -30,7 +30,7 @@ public class Activities extends CodeunitFormevents{
     
     
     @Override
-    public void beforeRenderList() throws Exception {
+    public void beforeRenderItem() throws Exception {
 
     }
     
@@ -65,7 +65,11 @@ public class Activities extends CodeunitFormevents{
         int setupBattery = getIntFieldValue(TSValues.ACTIVITY_SETUPBATTERY);
         int setupModule = getIntFieldValue(TSValues.ACTIVITY_SETUPMODULE);
          
+        
 
+
+        //TODO: REMOVE MEEEEE(Try to get user stored values instead)
+        int defaultStorageDataID = 161;
 
         
  
@@ -98,13 +102,7 @@ public class Activities extends CodeunitFormevents{
                 break;
                 
             case TSValues.ACTIVITIYCODE_COMPONENT_SETUP:
-                if(inventoryComponentRecordDataID == 0 || fromWarehouseDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                    break;
-                }
-                //TODO: REMOVE MEEEEE
-                int defaultStorageDataID = 161;
-                componentSetup(caseDataID,defaultStorageDataID,inventoryComponentRecordDataID,componentDataID,stoppointDataID,componentAmount,util);
+                componentSetup(caseDataID,stoppointDataID,fromWarehouseDataID,inventoryComponentRecordDataID,componentAmount,defaultStorageDataID);
                 break;
                 
                 
@@ -113,18 +111,11 @@ public class Activities extends CodeunitFormevents{
                 break;
             
             case TSValues.ACTIVITIYCODE_STORAGEMOVE_COMPONENT:
-                if(toWarehouseDataID == 0 || inventoryComponentRecordDataID == 0 || componentAmount < 1){
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                    break;
-                }
-                moveComponent(inventoryComponentRecordDataID,toWarehouseDataID,componentAmount,util);
+
+                moveComponent(defaultStorageDataID,fromWarehouseDataID,inventoryComponentRecordDataID,toWarehouseDataID,componentAmount);
                 break;
             
             case TSValues.ACTIVITIYCODE_STORAGEMOVE_DEVICE:
-                if(SelectedDeviceDataID == 0 || toWarehouseDataID == 0){
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                    break;
-                }
                 moveDevice(SelectedDeviceDataID,toWarehouseDataID,util);
                 break;
                 
@@ -473,73 +464,93 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
-    private void componentSetup(int caseDataID, int defaultStorage, int inventoryComponentRecordDataID, int componentDataID,int stoppointDataID,int componentAmount, Util util){
+    private void componentSetup(int caseDataID, int stoppointDataID, int fromWarehouseDataID, int warehouseComponentDataID,int componentAmount,int defaultStorage){
+        if(warehouseComponentDataID == 0 || fromWarehouseDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            return;
+        }
+        
+        SolutionRecord warehouseComponentSR = util.getSolutionRecord(TSValues.COMPONENTSTORAGE_ENTITY, warehouseComponentDataID);
+        WarehouseComponent warehouseComponent = new WarehouseComponent(warehouseComponentSR);
+        SolutionRecordNew defaultWarehouseSetupComponentActivityRecord = null;
+        SolutionRecord spSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
+        int amountRemoved;
+        int defaultComponentStorageDataID;
+        SolutionRecord defaultWarehouseComponentSR;
+        
+        
+        //Validation 
+     
         try{
+            defaultComponentStorageDataID = util.findWarehouseComponentDataID(warehouseComponent.getComponentDataID(), defaultStorage);
+            defaultWarehouseComponentSR = util.getSolutionRecord(TSValues.COMPONENTSTORAGE_ENTITY, defaultComponentStorageDataID);
             
-            //Get record of inventory for specific warehouse
-            SolutionRecord warehouseComponentSR = util.getSolutionRecord(TSValues.COMPONENTSTORAGE_ENTITY, inventoryComponentRecordDataID);
-            WarehouseComponent warehouseComponent = new WarehouseComponent(warehouseComponentSR);
-            SolutionRecordNew defaultWarehouseActivity = null;
-            componentDataID = warehouseComponent.getComponentDataID();
-            int availableComponents = warehouseComponent.getInventoryAmount();
-            int amountRemoved = 0;
-            //Check if there is enough items from the storage being taken from. 
-            if(availableComponents > componentAmount){
+            if(defaultStorage == fromWarehouseDataID){
+                if(warehouseComponent.getInventoryAmount() < componentAmount){
+                    setItemStatus(TSValues.ACTIVITIES_STATUS_AWAITADMIN);
+                    return;
+                }
+            } 
+            else{
+                //Storage capacity of record is 0(Less should not be allowed to happen)
+                if(warehouseComponent.getInventoryAmount() <= 0){
+                    //Nothing in non default storage, set to default storage and check again
+                    
+                    warehouseComponent = new WarehouseComponent(defaultWarehouseComponentSR);
+                    
+                    fromWarehouseDataID = defaultStorage;
+                    warehouseComponentDataID = defaultComponentStorageDataID;
+                    if(warehouseComponent.getInventoryAmount() < componentAmount){
+                        if(c.StatusID == TSValues.ACTIVITIES_STATUS_USERERROR){
+                            SolutionRecordNew replacementRecord = util.setupComponentActivityRecord(caseDataID, spSR, defaultStorage, defaultComponentStorageDataID, componentAmount, TSValues.ACTIVITIES_STATUS_AWAITADMIN);
+                            replacementRecord.persistChanges(false);
+                            setItemStatus(TSValues.ACTIVITIES_STATUS_DELETE);
+                        }
+                        else{
+                            setIntFieldValue(TSValues.ACTIVITY_FROMINVENTORY, defaultStorage);
+                            setIntFieldValue(TSValues.ACTIVITY_INVENTORYCOMPONENT, defaultComponentStorageDataID);
+                            setItemStatus(TSValues.ACTIVITIES_STATUS_AWAITADMIN);
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+        catch(Exception e){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
+            return;
+        }
+            
+        
+        
+        //Remove components from storage record
+        try{
+            if(warehouseComponent.getInventoryAmount() >= componentAmount){
                 warehouseComponent.removeComponentsFromInventory(componentAmount);
                 amountRemoved = componentAmount;
             }
             else{
-                if(defaultStorage == warehouseComponent.getWarehouseDataID()){
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_AWAITADMIN);
-                    return;
-                }
-                
-                
-                int defaultComponentStorageDataID = util.findWarehouseComponentDataID(componentDataID, defaultStorage);
-                //Well if a record dosent exist in default storage theres not much to do.........
-                if(defaultComponentStorageDataID == 0){
-                    setRedirectErrorMsg("Home storage component record does not exist");
-                    setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-                    return;
-                }
-                
-                SolutionRecord defaultComponentStorageSR = util.getSolutionRecord(TSValues.COMPONENTSTORAGE_ENTITY, defaultComponentStorageDataID);
-                
-                //If a user attempts to take from a storage with 0 in inventory we do not create a record, just change the existing one 
-                //to be an record from the defaul storage instead
-                if(availableComponents == 0){
-                    warehouseComponent = new WarehouseComponent(defaultComponentStorageSR);
-                    setIntFieldValue(TSValues.ACTIVITY_FROMINVENTORY, defaultStorage);
-                    setIntFieldValue(TSValues.ACTIVITY_INVENTORYCOMPONENT, defaultComponentStorageDataID);
-                    try{
-                        warehouseComponent.removeComponentsFromInventory(componentAmount);
-                        amountRemoved = componentAmount;
-                    }
-                    catch(ValueException e){
-                        setItemStatus(TSValues.ACTIVITIES_STATUS_AWAITADMIN);
-                        return;
-                    }
-
-                }
-                //Substract from current selected and the main warehouse
-                else{
-                    int defaultWarehouseComponentAmount = componentAmount - availableComponents;
-                    setIntFieldValue(TSValues.ACTIVITY_COMPONENTAMOUNT, availableComponents);
-                    SolutionRecord spSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
-                    defaultWarehouseActivity = util.createComponentSetupActivity(caseDataID, spSR, defaultStorage, defaultComponentStorageDataID, defaultWarehouseComponentAmount);
-                    amountRemoved = availableComponents;
-                    warehouseComponent.removeComponentsFromInventory(availableComponents);
-                }
-                
+                amountRemoved = warehouseComponent.getInventoryAmount();
+                warehouseComponent.removeComponentsFromInventory(amountRemoved);
+                int amountRemaining = componentAmount - amountRemoved;
+                setIntFieldValue(TSValues.ACTIVITY_COMPONENTAMOUNT, amountRemoved);
+                defaultWarehouseSetupComponentActivityRecord = util.setupComponentActivityRecord(caseDataID, spSR, defaultStorage, defaultComponentStorageDataID , amountRemaining, TSValues.ACTIVITIES_STATUS_INIT);
             }
-            
-            
-            
-            
-            int spcDataID = util.findStoppointComponentDataID(componentDataID,stoppointDataID);
+        }
+        catch(Exception e){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
+            return;
+        }
+        
+        
+        
+        //Lookup stoppoint component record and persist changes
+        try{
+            int spcDataID = util.findStoppointComponentDataID(warehouseComponent.getComponentDataID(),stoppointDataID);
+
             if(spcDataID == 0){
                 SolutionRecord stoppointSR = util.getSolutionRecord(TSValues.STOPPOINT_ENTITY, stoppointDataID);
-                SolutionRecord componentSR = util.getSolutionRecord(TSValues.COMPONENT_ENTITY, componentDataID);
+                SolutionRecord componentSR = util.getSolutionRecord(TSValues.COMPONENT_ENTITY, warehouseComponent.getComponentDataID());
                 SolutionRecordNew srn = util.createStoppointInvComponentRecord(stoppointSR, componentSR, amountRemoved);
                 srn.persistChanges();
             }
@@ -550,25 +561,25 @@ public class Activities extends CodeunitFormevents{
                 stoppointComponent.persistChanges();
             }
             warehouseComponent.persistChanges();
-            if(defaultWarehouseActivity != null){
-                defaultWarehouseActivity.persistChanges(true);
+            if(defaultWarehouseSetupComponentActivityRecord != null){
+                defaultWarehouseSetupComponentActivityRecord.persistChanges(true);
             }
-                      
- 
-            setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
-
-        }
-        catch(ValueException e){
-            //setRedirectErrorMsg("Not enough items in inventory");
-            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-        }
-        catch(IllegalArgumentException e){
-            setRedirectErrorMsg("Invalid DataIDs");
-            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-        }
+            if(c.StatusID == TSValues.ACTIVITIES_STATUS_USERERROR){
+                setItemStatus(TSValues.ACTIVITIES_STATUS_DELETE);
+                SolutionRecordNew replacementRecord = util.setupComponentActivityRecord(caseDataID,spSR,fromWarehouseDataID,warehouseComponentDataID,amountRemoved,TSValues.ACTIVITIES_STATUS_APPROVED);
+                replacementRecord.persistChanges(false);
+            }
+            else{
+                setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED); 
+            }
+        }   
+        
         catch(Exception e){
             setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
         }
+        
+        
+        
     }
     
     private void componentTakedown(int componentDataID, int stoppointDataID,int componentAmount){
@@ -605,17 +616,44 @@ public class Activities extends CodeunitFormevents{
         }
     }
     
-    private void moveComponent(int inventoryComponentRecordDataID, int toWarehouseDataID, int componentAmount, Util util){
+    private void moveComponent(int defaultStorageDataID,int fromWarehouseDataID, int inventoryComponentRecordDataID, int toWarehouseDataID, int componentAmount){
+        if(toWarehouseDataID == 0 || inventoryComponentRecordDataID == 0 || componentAmount < 1){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            return;
+        }
+        
+        SolutionRecord srFrom = util.getSolutionRecord(TSValues.COMPONENTSTORAGE_ENTITY, inventoryComponentRecordDataID);
+        WarehouseComponent warehouseComponentFrom = new WarehouseComponent(srFrom);
+        int amountInStorage = 0;
+        try{
+            amountInStorage = warehouseComponentFrom.getInventoryAmount();
+            //Dont transfer from the same storage to another
+            if(fromWarehouseDataID == toWarehouseDataID){
+                setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+                return;
+            }
+            
+            if((fromWarehouseDataID != defaultStorageDataID) && (amountInStorage < componentAmount)){
+                setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+                return;
+            }
+        }
+        catch(Exception e){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
+            return;
+        }
         
         try{
-
-            SolutionRecord srFrom = util.getSolutionRecord(TSValues.COMPONENTSTORAGE_ENTITY, inventoryComponentRecordDataID);
-            WarehouseComponent warehouseComponentFrom = new WarehouseComponent(srFrom);
-            warehouseComponentFrom.removeComponentsFromInventory(componentAmount);
-            
             int inventoryComponentDataID = warehouseComponentFrom.getComponentDataID();
             int toWarehouseInventoryComponentDataID = util.findWarehouseComponentDataID(inventoryComponentDataID, toWarehouseDataID);
 
+
+            if((amountInStorage < componentAmount) && (fromWarehouseDataID == defaultStorageDataID)){
+
+                setItemStatus(TSValues.ACTIVITIES_STATUS_AWAITADMIN);
+                return;
+            }
+            warehouseComponentFrom.removeComponentsFromInventory(componentAmount);
             //Record dosent exist, Create it
             if(toWarehouseInventoryComponentDataID == 0){
                 SolutionRecord warehouseToSR = util.getSolutionRecord(TSValues.WAREHOUSE_ENTITY, toWarehouseDataID);
@@ -624,8 +662,8 @@ public class Activities extends CodeunitFormevents{
                 warehouseComponentFrom.persistChanges();
                 srnTo.persistChanges();
             }
+            //Update record
             else{
-                //Update record
                 SolutionRecord srTo = util.getSolutionRecord(TSValues.COMPONENTSTORAGE_ENTITY, toWarehouseInventoryComponentDataID);
                 WarehouseComponent warehouseComponentTo = new WarehouseComponent(srTo);
                 warehouseComponentTo.addInventoryComponent(componentAmount);
@@ -634,34 +672,29 @@ public class Activities extends CodeunitFormevents{
             }
             setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
         }
-        catch(IllegalArgumentException e){
-            //Shouldnt really happen as theres a check before
-            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-        }
-        catch(ValueException e){
-            //If you remove more than there is present
-            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
-        }
             catch(Exception e){
+
             setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
         }
     }
 
     private void moveDevice(int SelectedDeviceDataID, int toWarehouseDataID, Util util){
+        if(SelectedDeviceDataID == 0 || toWarehouseDataID == 0){
+            setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            return;
+        }
+
+        SolutionRecord deviceSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, SelectedDeviceDataID);
+        SolutionRecord warehouseSR = util.getSolutionRecord(TSValues.WAREHOUSE_ENTITY, toWarehouseDataID);
+        Device device = new Device(deviceSR);
+
         try{
-            
-            //Get records
-            SolutionRecord deviceSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, SelectedDeviceDataID);
-            SolutionRecord warehouseSR = util.getSolutionRecord(TSValues.WAREHOUSE_ENTITY, toWarehouseDataID);
-            Device device = new Device(deviceSR);
-            
             //Validation checks
             if(device.isSetAtStoppoint()){
                 setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
             
-            //Set deviceRemoved storage
             device.setStorage(warehouseSR);
             device.persistChanges();
             setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
@@ -672,6 +705,9 @@ public class Activities extends CodeunitFormevents{
         catch(Exception e){
             setItemStatus(TSValues.ACTIVITIES_STATUS_SYSTEMERROR);
         }
+        
+        
+
     }
     
 
