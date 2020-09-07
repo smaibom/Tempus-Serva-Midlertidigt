@@ -138,6 +138,7 @@ public class Activities extends CodeunitFormevents{
         //Validation stage
         if(stoppointDataID == 0 || batteryDataID == 0 ){
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            setRedirectErrorMsg("De paakraevede felter er ikke udfyldt");
             return;
         }
         
@@ -147,6 +148,7 @@ public class Activities extends CodeunitFormevents{
         try {
             if(!battery.isBattery()){
                 setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+                setRedirectErrorMsg("Den valgte enhed i Valgt batteri er ikke et batteri");
                 return;    
             }
         } catch (Exception ex) {
@@ -190,6 +192,7 @@ public class Activities extends CodeunitFormevents{
     private void removeBattery(int caseDataID, int stoppointDataID, int batteryDataID, int toWarehouseDataID){
         //Validate for empty required fields
         if(stoppointDataID == 0 || batteryDataID == 0 || toWarehouseDataID == 0){
+            setRedirectErrorMsg("De paakraevede felter er ikke udfyldt");
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
             return;
         }
@@ -200,6 +203,7 @@ public class Activities extends CodeunitFormevents{
         
         try{
             if(!battery.isBattery()){
+                setRedirectErrorMsg("Den valgte batteri paa stopped er ikke et multiQ batteri");
                 setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
@@ -244,6 +248,7 @@ public class Activities extends CodeunitFormevents{
 
     //Validation stage
     if(stoppointDataID == 0 || deviceDataID == 0 || (setupBattery == 1 && batteryDataID == 0)){
+        setRedirectErrorMsg("De paakraevede felter er ikke udfyldt");
         setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         return;
     }
@@ -256,6 +261,7 @@ public class Activities extends CodeunitFormevents{
 
     try{
         if(!deviceCountdown.isCountdownModule()){
+            setRedirectErrorMsg("Den valgte Countdown er ikke et Countdown modul");
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
             return;
         }
@@ -336,6 +342,7 @@ public class Activities extends CodeunitFormevents{
     private void removeDeviceFromStoppoint(int caseDataID, int stoppointDataID, int deviceRemovedDataID, int toWarehouseDataID, int setupModule, int deviceSetupDataID){
         if(stoppointDataID == 0 || deviceRemovedDataID == 0 || toWarehouseDataID == 0 || (setupModule == 1 && deviceSetupDataID == 0) || deviceRemovedDataID == deviceSetupDataID){
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            setRedirectErrorMsg("De paakraevede felter er ikke udfyldt");
             return;
         }
         
@@ -349,6 +356,7 @@ public class Activities extends CodeunitFormevents{
         
         try{
             if(!deviceRemoved.isCountdownModule()){
+                setRedirectErrorMsg("Den valgte Countdown paa stoppested er ikke et Countdown modul");
                 setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
@@ -356,6 +364,7 @@ public class Activities extends CodeunitFormevents{
                 deviceSetupSR = util.getSolutionRecord(TSValues.DEVICE_ENTITY, deviceSetupDataID);
                 deviceSetup = new Device(deviceSetupSR);
                 if(!deviceSetup.isCountdownModule()){
+                    setRedirectErrorMsg("Den valgte Countdown er ikke et Countdown modul");
                     setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                     return;
                 }
@@ -408,6 +417,7 @@ public class Activities extends CodeunitFormevents{
         //Validation
         if(deviceDataID == 0 || stoppointDataID == 0){
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            setRedirectErrorMsg("De paakraevede felter er ikke udfyldt");
             return;
         }
         
@@ -445,6 +455,7 @@ public class Activities extends CodeunitFormevents{
         //Validation
         if(deviceDataID == 0 || stoppointDataID == 0){
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            setRedirectErrorMsg("De paakraevede felter er ikke udfyldt");
             return;
         }
         
@@ -467,6 +478,7 @@ public class Activities extends CodeunitFormevents{
     private void componentSetup(int caseDataID, int stoppointDataID, int fromWarehouseDataID, int warehouseComponentDataID,int componentAmount,int defaultStorage){
         if(warehouseComponentDataID == 0 || fromWarehouseDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            setRedirectErrorMsg("De paakraevede felter er ikke udfyldt");
             return;
         }
         
@@ -585,6 +597,7 @@ public class Activities extends CodeunitFormevents{
     private void componentTakedown(int componentDataID, int stoppointDataID,int componentAmount){
         if(componentDataID == 0 || stoppointDataID == 0 || componentAmount < 1){
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            setRedirectErrorMsg("De paakraevede felter er ikke udfyldt");
             return;
         }
         
@@ -606,9 +619,11 @@ public class Activities extends CodeunitFormevents{
             setItemStatus(TSValues.ACTIVITIES_STATUS_APPROVED);
         }
         catch(IllegalArgumentException e){
+            setRedirectErrorMsg("TODO: ");
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
         catch(ValueException e){
+            setRedirectErrorMsg("TODO: ");
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
         }
         catch(Exception e){
@@ -619,6 +634,7 @@ public class Activities extends CodeunitFormevents{
     private void moveComponent(int defaultStorageDataID,int fromWarehouseDataID, int inventoryComponentRecordDataID, int toWarehouseDataID, int componentAmount){
         if(toWarehouseDataID == 0 || inventoryComponentRecordDataID == 0 || componentAmount < 1){
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            setRedirectErrorMsg("De paakraevede felter er ikke udfyldt");
             return;
         }
         
@@ -629,11 +645,13 @@ public class Activities extends CodeunitFormevents{
             amountInStorage = warehouseComponentFrom.getInventoryAmount();
             //Dont transfer from the same storage to another
             if(fromWarehouseDataID == toWarehouseDataID){
+                setRedirectErrorMsg("Det valgte varelager er det samme som det modtagne lager");
                 setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
             
             if((fromWarehouseDataID != defaultStorageDataID) && (amountInStorage < componentAmount)){
+                setRedirectErrorMsg("Der er ikke nok af den valgte enhed paa det valgte lager");
                 setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
                 return;
             }
@@ -681,6 +699,7 @@ public class Activities extends CodeunitFormevents{
     private void moveDevice(int SelectedDeviceDataID, int toWarehouseDataID, Util util){
         if(SelectedDeviceDataID == 0 || toWarehouseDataID == 0){
             setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+            setRedirectErrorMsg("De paakraevede felter er ikke udfyldt");
             return;
         }
 
@@ -692,6 +711,7 @@ public class Activities extends CodeunitFormevents{
             //Validation checks
             if(device.isSetAtStoppoint()){
                 setItemStatus(TSValues.ACTIVITIES_STATUS_USERERROR);
+                setRedirectErrorMsg("Den valgte enhed er allerede sat op paa et stoppested");
                 return;
             }
             

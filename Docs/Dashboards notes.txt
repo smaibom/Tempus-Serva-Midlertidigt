@@ -1,0 +1,25 @@
+To access dashboards from designer panel: Design -> Dashboards -> edit or add widget.
+
+Tempusserva only allows for one dashboard to be active at a time
+
+
+To make a button to link to create a new record in an entity add this in content of a button type:
+
+main?SagID=<entityID>&command=new
+
+
+To make a button popout instead of redirecting add a html widget type and add this in content:
+
+<script>
+try{document.getElementById('Widget<ButtonID>').childNodes[0].setAttribute("target","_blank");}
+catch(err) {}
+document.getElementById("Widget<HTMLWidgetID>").style.display = "none";
+</script>
+
+It is recommended that the button url has &SubformSession=1 as parameter if this is done. This makes the popuout close when the user creates the record.
+
+
+To create list views go to the entity page and use "Søg udvidet". The checkboxes only selects the fields to be shown in the view being created, the fields do not need to be checkmarked to use as a search parameter.
+Click on "Ny søgning" when done with the search parameter. If multiple search options for specific fields is required, simply redo the procedure and use "indsæt OG" for AND statement or "indsæt eller" for OR statement.
+When the view is done click on "Visninger" and save the view. Then click on the saved view and in the address bar of the browser is the url for the view to be shown. Copy starting from main?SagID (Include this) the entire url and add it as a
+list command widget

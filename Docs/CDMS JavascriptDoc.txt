@@ -1,0 +1,33 @@
+Javascript for individual entities can be accessed by Entity page -> Advanced -> Edit Instructions, header and script.
+
+To hide the "Vis alle" button add to the script on the entity page:
+
+try {var pageNum = '20'; ShowPage(pageNum); $("#PageSelector_").hide(); } catch(err) {};
+
+Change the pageNum variable to the tab that should be selected by default.
+
+To hide the "Gem > Ny" button  add to the script on the entity page:
+
+try{ document.getElementsByClassName("updateSubmit btn btn-primary form-control")[1].type="hidden"; } catch(err) {};
+
+The submit button classes do not have IDs so by hiding the 2nd element of the list, using the alternate submit button scheme on a page this will result in hiding a different button than the "Gem > Ny" button
+
+When using javascript dependencies on fields on a page the validation will not work by default. Validation server side must be disabled(As fields hidden by javascript dependancies are still trying to be validated despite not being visible to user).
+The validation performed in the browser can be enabled(A warning will be given if fields are not validated when trying to send data but user can choose to ignore it). When using javascript dependencies for fields the validation will continue despite the field being hidden.
+A workaround is to validate fields to true when they are hidden and set them to false if they are shown(Tempusserva will override the false if the field is passing checking already).
+
+To validate a field to true or false use this function:
+
+try { validate(<Field Name>,'text','','','',<true/false>); } catch (err) {};
+
+In the Activity.js file that is the javascript running on the activity entity following modifications have been made:
+
+In the onready function there is a function run called "errorMsg", has a short timeout set to allow the page to render before executing.
+The purpose of this function is to give users an error message when they typed wrong input into the activities page. The error message must be defined from the codemodule attached to the entity.
+The errorMsg function checks the url for the parameter "errormsg" and throw an alert with the given value.
+
+
+For validation on the activities page add to the variable fieldNames entries of fields that requrie validation in the format of {'DATA_<FieldName>' : $('#VB_DATA_<FieldName>')}.
+
+To handle the javascript dependencies validation the validateHiddenToTrue function is attached as a onchange to the activity dropdown. When a change occurs all fields in the fieldNames list is validated.
+To handle fields that are shown when selecting a yes/no button attach onchange to the button and check if the field that is being validated is hidden or not.
