@@ -11,11 +11,3 @@ Upload codeunit jar file to selected path, from designer panel: Modules -> Clear
 
 To attach a codeunit to a entity from the designer panel: Entities -> <Entity to add codeunit> -> Advanced -> Codeunit.
 Here type <packagename>.<Class Name> of the code module to add. Attaching a codemodule to a entity use a class that extends CodeunitFormevents.
-
-
-
-
-
-TempusServa currently only allows for one selected dashboards for all users.
-
-To create dashboards go from the designer panel: Design -> Dashboards -> Click on
